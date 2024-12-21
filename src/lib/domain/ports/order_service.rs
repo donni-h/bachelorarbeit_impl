@@ -1,6 +1,6 @@
 use std::future::Future;
-use sea_orm::Order;
 use crate::domain::models::metadata::{SessionId, UserName};
+use crate::domain::models::order::{CreateOrderError, DeleteOrderError, FindOrderError, Order};
 
 pub trait OrderService: Clone + Send + Sync + 'static {
     fn find_order_by_session_id(
@@ -21,7 +21,7 @@ pub trait OrderService: Clone + Send + Sync + 'static {
     fn notify_checkout_status(
         &self,
         req: &SessionId,
-    ) -> Result<(), NotifyCheckoutError>;
+    ) -> impl Future<Output = Result<(), anyhow::Error>> + Send;
 
     fn delete_order(
         &self,

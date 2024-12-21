@@ -22,3 +22,9 @@ pub enum FindOrderError {
     #[error(transparent)]
     Unknown(#[from] anyhow::Error),
 }
+
+#[derive(Debug, Error)]
+pub enum CreateOrderError {}
+
+#[derive(Debug, Error)]
+pub enum DeleteOrderError {}

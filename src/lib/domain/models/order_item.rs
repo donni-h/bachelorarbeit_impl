@@ -2,6 +2,7 @@ use derive_more::Display;
 use getset::Getters;
 use rust_decimal::Decimal;
 use rust_decimal::prelude::FromPrimitive;
+use thiserror::Error;
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Getters)]
 #[getset(get = "pub")]
@@ -30,7 +31,7 @@ impl ProductName {
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 pub struct Price(Decimal);
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Error)]
 pub enum PriceError {
     #[error("price has to be positive")]
     Negative,

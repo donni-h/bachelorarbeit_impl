@@ -1,6 +1,6 @@
 use std::future::Future;
-use sea_orm::Order;
 use crate::domain::models::metadata::{SessionId, UserName};
+use crate::domain::models::order::{CreateOrderError, DeleteOrderError, FindOrderError, Order};
 
 pub trait OrderRepository: Clone + Send + Sync + 'static {
     fn find_order_by_session_id(
@@ -21,7 +21,7 @@ pub trait OrderRepository: Clone + Send + Sync + 'static {
     fn delete_order(
         &self,
         req: uuid::Uuid,
-    ) -> impl Future<Output = Result<(), DeleteOrderError>> + Send;
+    ) -> impl Future<Output = Result<uuid::Uuid, DeleteOrderError>> + Send;
 
     fn delete_all_orders(
         &self,
