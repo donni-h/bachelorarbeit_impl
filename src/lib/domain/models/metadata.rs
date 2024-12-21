@@ -9,11 +9,12 @@ pub struct Metadata {
     username: UserName,
     status: Option<SessionStatus>,
     session_id: SessionId,
+    created_at: DateTime<Utc>,
 }
 
 impl Metadata {
-    pub fn new(id: uuid::Uuid, username: UserName, status: Option<SessionStatus>, session_id: SessionId) -> Self {
-        Self {id, username, status, session_id}
+    pub fn new(id: uuid::Uuid, username: UserName, status: Option<SessionStatus>, session_id: SessionId, created_at: DateTime<Utc>) -> Self {
+        Self {id, username, status, session_id, created_at}
     }
 }
 
@@ -27,7 +28,7 @@ impl UserName {
     }
 }
 
-#[derive(Display, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
+#[derive(Display, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone, From)]
 pub enum SessionStatus {
     Open,
     Complete,
@@ -38,7 +39,7 @@ pub enum SessionStatus {
 pub struct SessionId(String);
 
 impl SessionId {
-    fn new(raw: &str) -> Self {
+    pub fn new(raw: &str) -> Self {
         Self(raw.to_string())
     }
 }

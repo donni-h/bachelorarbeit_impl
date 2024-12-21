@@ -7,9 +7,9 @@ use uuid::Uuid;
 use crate::domain::models::metadata::{Metadata, SessionId, UserName};
 use crate::domain::ports::order_repository::OrderRepository;
 use crate::domain::models::order::{CreateOrderError, DeleteOrderError, FindOrderError, Order};
-use crate::outbound::entities::metadata::MetadataEntity;
-use crate::outbound::entities::metadata::SessionStatus;
-
+use crate::outbound::entities::metadata::FetchMetadataEntity;
+use crate::outbound::entities::metadata::SessionStatusEntity;
+use sqlx::types::chrono::{DateTime, Utc};
 #[derive(Debug, Clone)]
 pub struct Postgres {
     pool: PgPool,
@@ -27,19 +27,19 @@ impl Postgres {
         Ok(Self { pool })
     }
 
-    async fn find_metadata_by_session_id(
+    pub async fn find_metadata_by_session_id(
         &self,
         session_id: &SessionId,
-    ) -> Result<MetadataEntity, sqlx::Error> {
+    ) -> Result<FetchMetadataEntity, sqlx::Error> {
         let metadata = sqlx::query_as!(
-            MetadataEntity,
+            FetchMetadataEntity,
             r#"
             SELECT id,
                    order_id,
                    username,
-                   status AS "status: SessionStatus",
+                   status AS "status: SessionStatusEntity",
                    session_id,
-                   created_at
+                   created_at AS "created_at: DateTime<Utc>"
             FROM metadata
             WHERE session_id = $1
             "#,
