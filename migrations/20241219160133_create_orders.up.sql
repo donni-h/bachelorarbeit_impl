@@ -1,0 +1,3 @@
+CREATE TABLE orders (
+    id UUID PRIMARY KEY
+)

@@ -1,0 +1,23 @@
+[package]
+name = "bachelorarbeit"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "bachelorarbeit"
+path = "src/lib/lib.rs"
+
+[[bin]]
+name = "bachelorarbeit_server"
+path = "src/bin/server/main.rs"
+
+[dependencies]
+actix-web = "4.9.0"
+anyhow = "1.0.94"
+derive_more = { version = "1.0.0", features = ["full"] }
+getset = "0.1.3"
+rust_decimal = "1.36.0"
+serde = { version = "1.0.216", features = ["std", "derive"] }
+sqlx = { version = "0.8.2", features = ["runtime-tokio", "postgres", "macros", "chrono", "uuid", "rust_decimal"] }
+thiserror = "2.0.8"
+uuid = { version = "1.11.0", features = ["v4", "fast-rng"] }

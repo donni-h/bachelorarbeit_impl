@@ -1,0 +1,1 @@
+pub trait CheckoutProducer: Clone + Send + Sync + 'static {}
