@@ -4,7 +4,7 @@ use derive_more::{Display, From};
 use getset::Getters;
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Getters)]
 #[getset(get = "pub")]
-pub struct Metadata {
+pub struct OrderDetails {
     id: uuid::Uuid,
     username: UserName,
     status: Option<SessionStatus>,
@@ -12,7 +12,7 @@ pub struct Metadata {
     created_at: DateTime<Utc>,
 }
 
-impl Metadata {
+impl OrderDetails {
     pub fn new(id: uuid::Uuid, username: UserName, status: Option<SessionStatus>, session_id: SessionId, created_at: DateTime<Utc>) -> Self {
         Self {id, username, status, session_id, created_at}
     }
@@ -46,16 +46,15 @@ impl SessionId {
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, From, Getters)]
 #[getset(get = "pub")]
-pub struct CreateMetadataRequest {
+pub struct CreateOrderDetailsRequest {
 
     username: UserName,
     status: Option<SessionStatus>,
-    order_id: uuid::Uuid,
     session_id: SessionId,
 }
 
-impl CreateMetadataRequest {
+impl CreateOrderDetailsRequest {
     pub fn new(username: UserName, status: Option<SessionStatus>, order_id: uuid::Uuid, session_id: SessionId) -> Self {
-        Self { username, status, order_id, session_id }
+        Self { username, status, session_id }
     }
 }

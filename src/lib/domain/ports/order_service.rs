@@ -1,5 +1,5 @@
 use std::future::Future;
-use crate::domain::models::metadata::{SessionId, UserName};
+use crate::domain::models::order_details::{SessionId, UserName};
 use crate::domain::models::order::{CreateOrderError, DeleteOrderError, FindOrderError, Order};
 
 pub trait OrderService: Clone + Send + Sync + 'static {

@@ -1,6 +1,6 @@
 use std::future::Future;
 use uuid::Uuid;
-use crate::domain::models::metadata::{SessionId, UserName};
+use crate::domain::models::order_details::{SessionId, UserName};
 use crate::domain::models::order::{CreateOrderError, DeleteOrderError, FindOrderError, Order};
 use crate::domain::ports::checkout_producer::CheckoutProducer;
 use crate::domain::ports::order_repository::OrderRepository;

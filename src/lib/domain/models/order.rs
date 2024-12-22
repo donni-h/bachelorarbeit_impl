@@ -1,17 +1,16 @@
 use thiserror::Error;
-use crate::domain::models::metadata::Metadata;
+use crate::domain::models::order_details::OrderDetails;
 use crate::domain::models::order_item::OrderItem;
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Order {
-    id: uuid::Uuid,
-    metadata: Metadata,
+    order_details: OrderDetails,
     items: Vec<OrderItem>,
 }
 
 impl Order {
-    pub fn new(id: uuid::Uuid, metadata: Metadata, items: Vec<OrderItem>) -> Self {
-        Self { id, metadata, items }
+    pub fn new(order_details: OrderDetails, items: Vec<OrderItem>) -> Self {
+        Self {order_details, items }
     }
 }
 
