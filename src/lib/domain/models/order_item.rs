@@ -1,4 +1,4 @@
-use derive_more::Display;
+use derive_more::{AsRef, Display};
 use getset::Getters;
 use rust_decimal::Decimal;
 use rust_decimal::prelude::FromPrimitive;
@@ -28,7 +28,7 @@ impl ProductName {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display, AsRef)]
 pub struct Price(Decimal);
 
 #[derive(Clone, Debug, Error)]

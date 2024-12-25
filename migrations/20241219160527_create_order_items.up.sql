@@ -4,7 +4,7 @@ CREATE TABLE order_item (
     item_id UUID NOT NULL,
     price NUMERIC(10,2) NOT NULL CHECK (price > 0),
     order_id UUID NOT NULL,
-    CONSTRAINT fk_order_item_order FOREIGN KEY (order_id) REFERENCES orders (id)
+    CONSTRAINT fk_order_item_order FOREIGN KEY (order_id) REFERENCES order_details (id)
         ON DELETE CASCADE
         ON UPDATE CASCADE
 );

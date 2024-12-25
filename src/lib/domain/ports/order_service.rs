@@ -1,9 +1,15 @@
 use std::future::Future;
-use crate::domain::models::metadata::{SessionId, UserName};
+use crate::domain::models::order_details::{SessionId, UserName};
 use crate::domain::models::order::{CreateOrderError, DeleteOrderError, FindOrderError, Order};
 
 pub trait OrderService: Clone + Send + Sync + 'static {
-    fn find_order_by_session_id(
+
+  //  fn create_order(
+  //      &self,
+  //      req: &Order,
+ //   ) -> impl Future<Output = Result<Order, CreateOrderError>> + Send;
+
+   /* fn find_order_by_session_id(
         &self,
         req: &SessionId,
     ) -> impl Future<Output = Result<Order, FindOrderError>> + Send;
@@ -13,10 +19,7 @@ pub trait OrderService: Clone + Send + Sync + 'static {
         req: &UserName,
     ) -> impl Future<Output = Result<Vec<Order>, FindOrderError>> + Send;
 
-    fn create_order(
-        &self,
-        req: &Order,
-    ) -> impl Future<Output = Result<Order, CreateOrderError>> + Send;
+
 
     fn notify_checkout_status(
         &self,
@@ -30,6 +33,6 @@ pub trait OrderService: Clone + Send + Sync + 'static {
 
     fn delete_all_orders(
         &self,
-    ) -> impl Future<Output = Result<(), DeleteOrderError>> + Send;
+    ) -> impl Future<Output = Result<(), DeleteOrderError>> + Send;*/
 }
 

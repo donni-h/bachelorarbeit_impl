@@ -1,17 +1,18 @@
+use getset::Getters;
 use thiserror::Error;
-use crate::domain::models::metadata::Metadata;
+use crate::domain::models::order_details::OrderDetails;
 use crate::domain::models::order_item::OrderItem;
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Getters)]
+#[getset(get = "pub")]
 pub struct Order {
-    id: uuid::Uuid,
-    metadata: Metadata,
+    order_details: OrderDetails,
     items: Vec<OrderItem>,
 }
 
 impl Order {
-    pub fn new(id: uuid::Uuid, metadata: Metadata, items: Vec<OrderItem>) -> Self {
-        Self { id, metadata, items }
+    pub fn new(order_details: OrderDetails, items: Vec<OrderItem>) -> Self {
+        Self { order_details, items }
     }
 }
 
@@ -24,7 +25,18 @@ pub enum FindOrderError {
 }
 
 #[derive(Debug, Error)]
-pub enum CreateOrderError {}
+pub enum CreateOrderError {
+    #[error("order already exists")]
+    Duplicate,
+    #[error(transparent)]
+    Unknown(#[from] anyhow::Error),
+    
+}
 
 #[derive(Debug, Error)]
-pub enum DeleteOrderError {}
+pub enum DeleteOrderError {
+    #[error("order does not exist")]
+    NotFound,
+    #[error(transparent)]
+    Unknown(#[from] anyhow::Error), 
+}

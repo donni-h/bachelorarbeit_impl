@@ -1,3 +1,2 @@
 pub mod order_item;
-pub mod order;
-pub mod metadata;
+pub mod order_details;

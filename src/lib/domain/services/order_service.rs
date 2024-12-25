@@ -1,6 +1,6 @@
 use std::future::Future;
 use uuid::Uuid;
-use crate::domain::models::metadata::{SessionId, UserName};
+use crate::domain::models::order_details::{SessionId, UserName};
 use crate::domain::models::order::{CreateOrderError, DeleteOrderError, FindOrderError, Order};
 use crate::domain::ports::checkout_producer::CheckoutProducer;
 use crate::domain::ports::order_repository::OrderRepository;
@@ -31,11 +31,11 @@ where
 }
 
 
-// impl<R, C> OrderService for DefaultOrderService<R, C>
-// where
-//     R: OrderRepository,
-//     C: CheckoutProducer,
-// {
+impl<R, C> OrderService for DefaultOrderService<R, C>
+where
+     R: OrderRepository,
+     C: CheckoutProducer,
+ {
 //     fn find_order_by_session_id(&self, req: &SessionId) -> impl Future<Output=Result<Order, FindOrderError>> + Send {
 //         todo!()
 //     }
@@ -59,4 +59,4 @@ where
 //     fn delete_all_orders(&self) -> impl Future<Output=Result<(), DeleteOrderError>> + Send {
 //         todo!()
 //     }
-// }
+}

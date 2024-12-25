@@ -4,17 +4,17 @@ use derive_more::{Display, From};
 use getset::Getters;
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Getters)]
 #[getset(get = "pub")]
-pub struct Metadata {
-    id: uuid::Uuid,
+pub struct OrderDetails {
+    order_id: uuid::Uuid,
     username: UserName,
     status: Option<SessionStatus>,
     session_id: SessionId,
     created_at: DateTime<Utc>,
 }
 
-impl Metadata {
+impl OrderDetails {
     pub fn new(id: uuid::Uuid, username: UserName, status: Option<SessionStatus>, session_id: SessionId, created_at: DateTime<Utc>) -> Self {
-        Self {id, username, status, session_id, created_at}
+        Self { order_id: id, username, status, session_id, created_at}
     }
 }
 
