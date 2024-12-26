@@ -1,34 +1,34 @@
+use actix_web::error::DispatchError::Service;
 use chrono::Utc;
 use uuid::Uuid;
-use bachelorarbeit::domain::models::order::Order;
+use bachelorarbeit::domain::models::order::{CreateOrderRequest, Order};
 use bachelorarbeit::domain::models::order_details::{OrderDetails, SessionId, UserName};
 use bachelorarbeit::domain::models::order_details::SessionStatus;
-use bachelorarbeit::domain::models::order_item::{OrderItem, Price, ProductName};
+use bachelorarbeit::domain::models::order_item::{CreateOrderItemRequest, OrderItem, Price, ProductName};
 use bachelorarbeit::domain::ports::order_repository::OrderRepository;
+use bachelorarbeit::domain::ports::order_service::OrderService;
+use bachelorarbeit::domain::services::order_service::DefaultOrderService;
 use bachelorarbeit::outbound::postgres::Postgres;
+use bachelorarbeit::outbound::rabbitmq::RabbitMQ;
 
 #[tokio::main]
 async fn main() {
     let postgres = Postgres::new("postgres://admin:admin@localhost:5432/bachelorarbeit").await.unwrap();
     let price = Price::new(4.0).unwrap();
     let product_name = ProductName::new("mein Produkt");
-    let order_item = OrderItem::new(Uuid::new_v4(), product_name, Uuid::new_v4(), price);
-    
-    
-    let order_id = Uuid::new_v4();
-    let session_id = SessionId::new("abcd1234");
     let username = UserName::new("Hannes");
-    let status = Some(SessionStatus::Open);
-    let created_at = Utc::now();
-    let details = OrderDetails::new(order_id, username, status, session_id, created_at);
+    let item_req = CreateOrderItemRequest::new(product_name.clone(), Uuid::new_v4(), price.clone());
+    let item_req2 = CreateOrderItemRequest::new(product_name.clone(), Uuid::new_v4(), price.clone());
+    let item_req3 = CreateOrderItemRequest::new(product_name, Uuid::new_v4(), price);
+    let service = DefaultOrderService::new(postgres, RabbitMQ::new());
+
+    let req = CreateOrderRequest::new(username.clone(),vec![item_req,item_req2,item_req3]);
+    let id_result = service.create_order(&req).await;
     
-    let order = Order::new(details, vec![order_item]);
+    println!("{:#?}", id_result); 
     
-    let id = postgres.create_order(&order).await.expect("Couldn't create item");
+    let orders_result = service.find_orders_by_username(&username).await;
+    println!("{:#?}", orders_result);
     
-    println!("{:?}", id);
-    
-    let id = postgres.delete_order(id).await.expect("Couldn't delete order");
-    
-    println!("{:?}", id);
-}
+    println!("{:#?}", orders_result.unwrap().len());
+} 

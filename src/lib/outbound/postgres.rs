@@ -1,6 +1,8 @@
+use std::fmt::format;
 use std::future::Future;
 use std::str::FromStr;
 use anyhow::{anyhow, Context};
+use rust_decimal::Decimal;
 use sqlx::{query_as, Executor, PgPool, Transaction};
 use sqlx::postgres::PgConnectOptions;
 use uuid::Uuid;
@@ -9,8 +11,9 @@ use crate::domain::ports::order_repository::OrderRepository;
 use crate::domain::models::order::{CreateOrderError, DeleteOrderError, FindOrderError, Order};
 use crate::outbound::entities::order_details::{CreateOrderDetailsEntity, SessionStatusEntity};
 use sqlx::types::chrono::{DateTime, Utc};
+use crate::domain::models::order_item::OrderItem;
 use crate::outbound::entities::order_details::FetchOrderDetailsEntity;
-use crate::outbound::entities::order_item::CreateOrderItemEntity;
+use crate::outbound::entities::order_item::{CreateOrderItemEntity, FetchOrderItemEntity};
 
 #[derive(Debug, Clone)]
 pub struct Postgres {
@@ -43,11 +46,11 @@ impl Postgres {
         Ok(())
     }
 
-    pub async fn find_metadata_by_session_id(
+    pub async fn find_details_by_session_id(
         &self,
         session_id: &SessionId,
     ) -> Result<FetchOrderDetailsEntity, sqlx::Error> {
-        let metadata = sqlx::query_as!(
+        let details = sqlx::query_as!(
             FetchOrderDetailsEntity,
             r#"
             SELECT id,
@@ -63,10 +66,53 @@ impl Postgres {
             .fetch_one(&self.pool)
             .await?;
 
-        Ok(metadata)
+        Ok(details)
 
     }
+    pub async fn find_order_details_by_username(&self,
+                                                username: &UserName
+    ) -> Result<Vec<FetchOrderDetailsEntity>, sqlx::Error> {
+        let details: Vec<FetchOrderDetailsEntity> = sqlx::query_as!(
+            FetchOrderDetailsEntity,
+            r#"
+            SELECT id,
+                   username,
+                   status AS "status: SessionStatusEntity",
+                   session_id,
+                   created_at AS "created_at: DateTime<Utc>"
+            FROM order_details
+            WHERE username = $1
+            "#,
+            username.to_string()
+        )
+            .fetch_all(&self.pool)
+            .await?;
 
+        Ok(details)
+    }
+    pub async fn find_order_items_by_order_id(
+        &self,
+        order_id: &Uuid,
+    ) -> Result<Vec<FetchOrderItemEntity>, sqlx::Error> {
+
+        let items: Vec<FetchOrderItemEntity> = sqlx::query_as!(
+            FetchOrderItemEntity,
+            r#"
+            SELECT id,
+                   product_name,
+                   item_id,
+                   price AS "price: Decimal",
+                   order_id
+            FROM order_item
+            WHERE order_id = $1
+            "#,
+            order_id,
+        )
+            .fetch_all(&self.pool)
+            .await?;
+
+        Ok(items)
+    }
     async fn create_order_details(&self,
                                       details: CreateOrderDetailsEntity,
                                       tx: &mut Transaction<'_, sqlx::Postgres>
@@ -89,33 +135,109 @@ impl Postgres {
 
     }
 
-    async fn create_order_item(&self,
-                               item: CreateOrderItemEntity,
+    async fn create_order_items(&self,
+                               items: Vec<CreateOrderItemEntity>,
                                tx: &mut Transaction<'_, sqlx::Postgres>
     ) -> Result<(), sqlx::Error> {
+        let ids: Vec<Uuid> = items.iter().map(|item| item.id).collect();
+        let product_names: Vec<String> = items.iter().map(|item| item.product_name.clone()).collect();
+        let item_ids: Vec<Uuid> = items.iter().map(|item| item.item_id).collect();
+        let prices: Vec<Decimal> = items.iter().map(|item| item.price).collect();
+        let order_ids: Vec<Uuid> = items.iter().map(|item| item.order_id).collect();
         let query = sqlx::query_as!(
             CreateOrderItemEntity,
             r#"
             INSERT INTO order_item (id, product_name, item_id, price, order_id)
-            VALUES ($1, $2, $3, $4, $5)
+            SELECT * FROM UNNEST($1::Uuid[], $2::text[], $3::Uuid[], $4::Decimal[], $5::Uuid[])
             "#,
-            item.id,
-            item.product_name,
-            item.item_id,
-            item.price,
-            item.order_id,
+            &ids,
+            &product_names,
+            &item_ids,
+            &prices,
+            &order_ids,
         );
         tx.execute(query).await?;
 
         Ok(())
     }
+
+    async fn delete_orders(&self) -> Result<(), sqlx::Error> {
+        sqlx::query!("DELETE FROM order_details")
+            .execute(&self.pool)
+            .await?;
+
+        Ok(())
+
+    }
+    
+    
+    async fn process_details(&self, details: FetchOrderDetailsEntity) 
+        -> Result<Order, FindOrderError> {
+        let items: Vec<FetchOrderItemEntity> = self.find_order_items_by_order_id(&details.id).await
+            .map_err(|e| {
+                FindOrderError::Unknown(anyhow!(e).context(format!(
+                    "Error finding order items for order id {}"
+                    ,details.id
+                )))
+            })?;
+        let details = details.into_domain();
+        let items: Vec<OrderItem> = items
+            .into_iter()
+            .map(|item| {
+                let id = item.id.clone();
+
+                item.try_into_domain().map_err(|e| {
+                    FindOrderError::Unknown(anyhow!(e).context(format!(
+                        "Failed to convert order item with id {} into domain",
+                        id
+                    )))
+                })
+            })
+            .collect::<Result<Vec<_>, FindOrderError>>()?;
+
+        let order = Order::new(details, items).map_err(|e| {
+            FindOrderError::Unknown(anyhow!(e).context("Failed to convert to order!".to_string()))
+        })?;
+
+        Ok(order)
+    }
 }
 
 impl OrderRepository for Postgres {
+    
+    async fn find_order_by_session_id(&self, req: &SessionId) -> Result<Order, FindOrderError> {
+        let details = self.find_details_by_session_id(req).await
+            .map_err(|e| {
+                FindOrderError::Unknown(anyhow!(e).context(format!(
+                    "Error finding order details by session {req}"
+                )))
+            })?;
+
+        self.process_details(details).await
+    }
+
+    async fn find_orders_by_username(&self, req: &UserName) -> Result<Vec<Order>, FindOrderError> {
+        let mut orders: Vec<Order> = Vec::new();
+
+        let details_for_name = self.find_order_details_by_username(req)
+            .await
+            .map_err(|e|
+            FindOrderError::Unknown(anyhow!(e).context(format!(
+                "Error finding order details for username {req}"
+            ))))?;
+
+        for details in details_for_name {
+            let order = self.process_details(details).await?;
+            orders.push(order);
+        }
+        
+        Ok(orders)
+
+    }
 
     async fn create_order(&self, req: &Order) -> Result<Uuid, CreateOrderError> {
-        let order_details = CreateOrderDetailsEntity::from_domain(req.order_details());
-        let order_id = &order_details.id.clone();
+        let order_details = CreateOrderDetailsEntity::from_domain(req.details());
+        let order_id = order_details.id.clone();
         let mut tx = self
             .pool
             .begin()
@@ -125,7 +247,7 @@ impl OrderRepository for Postgres {
         self.create_order_details(order_details, &mut tx).await.map_err(|e| {
             CreateOrderError::Unknown(anyhow!(e).context(format!(
                 "failed to save order with id {:?}",
-                req.order_details().order_id()
+                req.details().order_id()
             )))
         })?;
 
@@ -133,20 +255,20 @@ impl OrderRepository for Postgres {
         let items: Vec<CreateOrderItemEntity> = req
             .items()
             .into_iter()
-            .map(|item| CreateOrderItemEntity::from_domain(item, order_id))
+            .map(|item| CreateOrderItemEntity::from_domain(item, &order_id))
             .collect();
 
 
-        for item in items {
-            self.create_order_item(item, &mut tx)
-                .await
-                .context("failed to create order item")?;
-        }
+
+        self.create_order_items(items, &mut tx)
+            .await
+            .context("failed to create order items")?;
+
 
 
         tx.commit().await.context("failed to commit transaction")?;
 
-        Ok(order_id.clone())
+        Ok(order_id)
 
     }
 
@@ -158,4 +280,11 @@ impl OrderRepository for Postgres {
         })?;
         Ok(req)
     }
+
+    async fn delete_all_orders(&self) -> Result<(), DeleteOrderError> {
+        self.delete_orders().await.map_err(|e| {
+            DeleteOrderError::Unknown(anyhow!(e).context("failed to delete all orders.".to_string()))
+        })
+    }
+
 }

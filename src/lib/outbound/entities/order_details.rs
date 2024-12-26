@@ -2,7 +2,8 @@ use derive_more::From;
 use sqlx::FromRow;
 use sqlx::types::chrono::{DateTime, Utc};
 use sqlx::types::Uuid;
-use crate::domain::models::order_details::{OrderDetails, SessionStatus};
+use crate::domain::models::order::FindOrderError;
+use crate::domain::models::order_details::{OrderDetails, SessionId, SessionStatus, UserName};
 
 #[derive(Debug, FromRow)]
 pub struct FetchOrderDetailsEntity {
@@ -11,6 +12,22 @@ pub struct FetchOrderDetailsEntity {
     pub status: Option<SessionStatusEntity>, // Nullable column
     pub session_id: String,    // Nullable column
     pub created_at: DateTime<Utc>,     // Maps to TIMESTAMP
+}
+
+impl FetchOrderDetailsEntity {
+    pub fn into_domain(self) -> OrderDetails {
+        let status = self.status.map(SessionStatusEntity::into_domain);
+        let username = UserName::new(&self.username);
+        let session_id = SessionId::new(&self.session_id);
+        
+        OrderDetails::new(
+            self.id,
+            username,
+            status,
+            session_id,
+            self.created_at,
+        )
+    }
 }
 
 #[derive(Debug, sqlx::Type)]
@@ -35,6 +52,16 @@ impl From<SessionStatus> for SessionStatusEntity {
             SessionStatus::Open => SessionStatusEntity::Open,
             SessionStatus::Complete => SessionStatusEntity::Complete,
             SessionStatus::Expired => SessionStatusEntity::Expired,
+        }
+    }
+}
+
+impl SessionStatusEntity {
+    fn into_domain(self) -> SessionStatus {
+        match self {
+            SessionStatusEntity::Open => SessionStatus::Open,
+            SessionStatusEntity::Complete => SessionStatus::Complete,
+            SessionStatusEntity::Expired => SessionStatus::Expired,
         }
     }
 }

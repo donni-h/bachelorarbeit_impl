@@ -2,10 +2,12 @@ use sqlx::types::chrono::{DateTime, Utc};
 use sqlx::types::uuid;
 use derive_more::{Display, From};
 use getset::Getters;
+use uuid::Uuid;
+
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Getters)]
 #[getset(get = "pub")]
 pub struct OrderDetails {
-    order_id: uuid::Uuid,
+    order_id: Uuid,
     username: UserName,
     status: Option<SessionStatus>,
     session_id: SessionId,
@@ -13,7 +15,7 @@ pub struct OrderDetails {
 }
 
 impl OrderDetails {
-    pub fn new(id: uuid::Uuid, username: UserName, status: Option<SessionStatus>, session_id: SessionId, created_at: DateTime<Utc>) -> Self {
+    pub fn new(id: Uuid, username: UserName, status: Option<SessionStatus>, session_id: SessionId, created_at: DateTime<Utc>) -> Self {
         Self { order_id: id, username, status, session_id, created_at}
     }
 }
@@ -41,21 +43,5 @@ pub struct SessionId(String);
 impl SessionId {
     pub fn new(raw: &str) -> Self {
         Self(raw.to_string())
-    }
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, From, Getters)]
-#[getset(get = "pub")]
-pub struct CreateMetadataRequest {
-
-    username: UserName,
-    status: Option<SessionStatus>,
-    order_id: uuid::Uuid,
-    session_id: SessionId,
-}
-
-impl CreateMetadataRequest {
-    pub fn new(username: UserName, status: Option<SessionStatus>, order_id: uuid::Uuid, session_id: SessionId) -> Self {
-        Self { username, status, order_id, session_id }
     }
 }
