@@ -1,5 +1,7 @@
 use std::future::Future;
+use anyhow::anyhow;
 use chrono::Utc;
+use stripe::Object;
 use uuid::Uuid;
 use crate::domain::models::order_details::{OrderDetails, SessionId, SessionStatus, UserName};
 use crate::domain::models::order::{CreateOrderError, CreateOrderRequest, DeleteOrderError, FindOrderError, Order};
@@ -7,50 +9,47 @@ use crate::domain::models::order_item::OrderItem;
 use crate::domain::ports::checkout_producer::CheckoutProducer;
 use crate::domain::ports::order_repository::OrderRepository;
 use crate::domain::ports::order_service::OrderService;
+use crate::domain::ports::payment_service::PaymentService;
 
 #[derive(Debug, Clone)]
-pub struct DefaultOrderService<R, C>
+pub struct DefaultOrderService<R, C, P>
 where
     R: OrderRepository,
     C: CheckoutProducer,
+    P: PaymentService,
 {
     repository: R,
     checkout_producer: C,
+    payment_service: P
 }
 
-impl<R, C> DefaultOrderService<R, C>
+impl<R, C, P> DefaultOrderService<R, C, P>
 where
     R: OrderRepository,
     C: CheckoutProducer,
+    P: PaymentService,
 {
 
-    pub fn new(repository: R, checkout_producer: C) -> Self {
+    pub fn new(repository: R, checkout_producer: C, payment_service: P) -> Self {
         Self{
             repository,
             checkout_producer,
+            payment_service
         }
     }
 }
 
 
-impl<R, C> OrderService for DefaultOrderService<R, C>
+impl<R, C, P> OrderService for DefaultOrderService<R, C, P>
 where
      R: OrderRepository,
      C: CheckoutProducer,
+     P: PaymentService,
  {
-     async fn create_order(&self, req: &CreateOrderRequest) -> Result<Order, CreateOrderError> {
+     async fn create_order(&self, req: &CreateOrderRequest) -> Result<String, CreateOrderError> {
          let status = Some(SessionStatus::Open);
-         let session_id = SessionId::new("my session");
          let created_at = Utc::now();
-         
-         let details = OrderDetails::new(
-             req.id().clone(),
-             req.username().clone(),
-             status,
-             session_id,
-             created_at,
-         );
-         
+
          let order_items = req.items()
              .iter()
              .map(|item| OrderItem::new(
@@ -60,12 +59,33 @@ where
                                         item.price().clone())
              )
              .collect();
-             
+
+         let checkout_session = self.payment_service
+             .create_checkout_session(&order_items)
+             .await
+             .map_err(|err| CreateOrderError::from(err))?;
+
+         let session_id = SessionId::new(checkout_session.id().as_str());
+
+         let details = OrderDetails::new(
+             req.id().clone(),
+             req.username().clone(),
+             status,
+             session_id,
+             created_at,
+         );
+
          let order = Order::new(details, order_items)?;
-         
+
+         let checkout_url = checkout_session
+             .url
+             .ok_or(CreateOrderError::Unknown(anyhow!("Couldn't get a checkout url")))?;
+
          let _ = self.repository.create_order(&order).await?;
 
-         Ok(order)
+
+
+         Ok(checkout_url)
      }
      async fn find_order_by_session_id(&self, req: &SessionId) -> Result<Order, FindOrderError> {
          self.repository.find_order_by_session_id(req).await
@@ -83,7 +103,7 @@ where
 //     fn notify_checkout_status(&self, req: &SessionId) -> Result<(), NotifyCheckoutError> {
 //         todo!()
 //     }
-//
+
      async fn delete_order(&self, req: Uuid) -> Result<Uuid, DeleteOrderError> {
          self.repository.delete_order(req).await
      }

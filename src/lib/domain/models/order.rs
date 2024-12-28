@@ -2,7 +2,7 @@ use derive_more::From;
 use getset::Getters;
 use thiserror::Error;
 use uuid::Uuid;
-use crate::domain::models::order_details::{OrderDetails, UserName};
+use crate::domain::models::order_details::{OrderDetails, SessionStatus, UserName};
 use crate::domain::models::order_item::{CreateOrderItemRequest, OrderItem};
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Getters)]
@@ -37,6 +37,19 @@ impl CreateOrderRequest {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, From, Getters)]
+#[getset(get = "pub")]
+pub struct UpdateOrderStatusRequest {
+    id: Uuid,
+    status: SessionStatus,
+}
+
+impl UpdateOrderStatusRequest {
+    pub fn new(id: Uuid, status: SessionStatus) -> Self {
+        Self { id, status }
+    }
+}
+
 #[derive(Debug, Error)]
 pub enum FindOrderError {
     #[error("cannot find order with id {id}")]
@@ -63,6 +76,15 @@ pub enum DeleteOrderError {
     #[error(transparent)]
     Unknown(#[from] anyhow::Error), 
 }
+
+#[derive(Debug, Error)]
+pub enum UpdateOrderError {
+    #[error("order does not exist")]
+    NotFound,
+    #[error(transparent)]
+    Unknown(#[from] anyhow::Error),
+}
+
 
 #[cfg(test)]
 mod tests {

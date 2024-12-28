@@ -1,7 +1,7 @@
 use derive_more::{AsRef, Display, From};
 use getset::Getters;
 use rust_decimal::Decimal;
-use rust_decimal::prelude::FromPrimitive;
+use rust_decimal::prelude::{FromPrimitive, ToPrimitive};
 use thiserror::Error;
 use uuid::Uuid;
 
@@ -49,6 +49,10 @@ impl Price {
             Ok(Self(value))
         }
 
+    }
+
+    pub fn as_cents(&self) -> Option<i64> {
+        (self.0 * Decimal::new(100, 0)).to_i64()
     }
 }
 

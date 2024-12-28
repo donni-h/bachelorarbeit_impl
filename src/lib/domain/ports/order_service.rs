@@ -1,7 +1,7 @@
 use std::future::Future;
 use uuid::Uuid;
-use crate::domain::models::order_details::{SessionId, UserName};
-use crate::domain::models::order::{CreateOrderError, CreateOrderRequest, DeleteOrderError, FindOrderError, Order};
+use crate::domain::models::order_details::{SessionId, SessionStatus, UserName};
+use crate::domain::models::order::{CreateOrderError, CreateOrderRequest, DeleteOrderError, FindOrderError, Order, UpdateOrderError, UpdateOrderStatusRequest};
 
 pub trait OrderService: Clone + Send + Sync + 'static {
 
@@ -40,5 +40,10 @@ pub trait OrderService: Clone + Send + Sync + 'static {
     fn delete_all_orders(
         &self,
     ) -> impl Future<Output = Result<(), DeleteOrderError>> + Send;
+
+    fn update_order_status(
+        &self,
+        req: UpdateOrderStatusRequest,
+    ) -> impl Future<Output = Result<Order, UpdateOrderError>> + Send;
 }
 

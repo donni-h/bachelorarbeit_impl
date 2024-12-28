@@ -1,21 +1,32 @@
 use std::future::Future;
-use stripe::{CheckoutSession, StripeError};
+use stripe::{CheckoutSession, CheckoutSessionStatus, StripeError};
+use thiserror::Error;
 use crate::domain::models::order::{CreateOrderError, CreateOrderRequest, Order};
 use crate::domain::models::order_details::{SessionId, SessionStatus};
+use crate::domain::models::order_item::OrderItem;
 
 pub trait PaymentService: Clone + Send + Sync + 'static {
     fn create_checkout_session(
         &self,
-        order: &CreateOrderRequest,
-    ) -> impl Future<Output=Result<CheckoutSession, StripeError>> + Send;
+        order_items: &Vec<OrderItem>,
+    ) -> impl Future<Output=Result<CheckoutSession, PaymentServiceError>> + Send;
 
     fn retrieve_checkout_status(
         &self,
         id: &SessionId,
-    ) -> impl Future<Output=Result<SessionStatus, StripeError>> + Send;
+    ) -> impl Future<Output=Result<Option<SessionStatus>, PaymentServiceError>> + Send;
     
     fn expire_session(
         &self,
         id: &SessionId,
-    ) -> impl Future<Output=Result<(), StripeError>> + Send;
+    ) -> impl Future<Output=Result<(), PaymentServiceError>> + Send;
 }
+
+#[derive(Debug, Error)]
+pub enum PaymentServiceError {
+    #[error(transparent)]
+    Unknown(#[from] anyhow::Error),
+    #[error("invalid session id {0}")]
+    InvalidSessionId(SessionId),
+}
+
