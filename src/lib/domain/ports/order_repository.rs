@@ -1,7 +1,7 @@
 use std::future::Future;
 use uuid::Uuid;
-use crate::domain::models::order_details::{SessionId, UserName};
-use crate::domain::models::order::{CreateOrderError, DeleteOrderError, FindOrderError, Order};
+use crate::domain::models::order_details::{SessionId, SessionStatus, UserName};
+use crate::domain::models::order::{CreateOrderError, DeleteOrderError, FindOrderError, Order, UpdateOrderError};
 
 pub trait OrderRepository: Clone + Send + Sync + 'static {
     fn find_order_by_session_id(
@@ -32,4 +32,10 @@ pub trait OrderRepository: Clone + Send + Sync + 'static {
         &self,
         req: Uuid,
     ) -> impl Future<Output = Result<Order, FindOrderError>> + Send;
+
+    fn update_order_status(
+        &self,
+        id: &Uuid,
+        status: &SessionStatus,
+    ) -> impl Future<Output=Result<Order, UpdateOrderError>> + Send;
 }

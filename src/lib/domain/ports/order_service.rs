@@ -8,7 +8,7 @@ pub trait OrderService: Clone + Send + Sync + 'static {
   fn create_order(
         &self,
         req: &CreateOrderRequest,
-    ) -> impl Future<Output = Result<Order, CreateOrderError>> + Send;
+    ) -> impl Future<Output = Result<String, CreateOrderError>> + Send;
 
    fn find_order_by_session_id(
         &self,

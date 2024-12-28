@@ -1,10 +1,11 @@
 use std::future::Future;
+use std::sync::Arc;
 use anyhow::anyhow;
 use chrono::Utc;
 use stripe::Object;
 use uuid::Uuid;
 use crate::domain::models::order_details::{OrderDetails, SessionId, SessionStatus, UserName};
-use crate::domain::models::order::{CreateOrderError, CreateOrderRequest, DeleteOrderError, FindOrderError, Order};
+use crate::domain::models::order::{CreateOrderError, CreateOrderRequest, DeleteOrderError, FindOrderError, Order, UpdateOrderError, UpdateOrderStatusRequest};
 use crate::domain::models::order_item::OrderItem;
 use crate::domain::ports::checkout_producer::CheckoutProducer;
 use crate::domain::ports::order_repository::OrderRepository;
@@ -20,7 +21,7 @@ where
 {
     repository: R,
     checkout_producer: C,
-    payment_service: P
+    payment_service: Arc<P>
 }
 
 impl<R, C, P> DefaultOrderService<R, C, P>
@@ -30,7 +31,7 @@ where
     P: PaymentService,
 {
 
-    pub fn new(repository: R, checkout_producer: C, payment_service: P) -> Self {
+    pub fn new(repository: R, checkout_producer: C, payment_service: Arc<P>) -> Self {
         Self{
             repository,
             checkout_producer,
@@ -63,7 +64,9 @@ where
          let checkout_session = self.payment_service
              .create_checkout_session(&order_items)
              .await
-             .map_err(|err| CreateOrderError::from(err))?;
+             .map_err(|e| {
+                 CreateOrderError::Unknown(anyhow!(e))
+             })?;
 
          let session_id = SessionId::new(checkout_session.id().as_str());
 
@@ -112,4 +115,11 @@ where
          self.repository.delete_all_orders().await
          
      }
-}
+
+     async fn update_order_status(
+         &self,
+         req: UpdateOrderStatusRequest,
+     ) -> Result<Order, UpdateOrderError> {
+         self.repository.update_order_status(req.id(), req.status()).await
+     }
+ }

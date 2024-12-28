@@ -6,9 +6,9 @@ use rust_decimal::Decimal;
 use sqlx::{query_as, Executor, PgPool, Transaction};
 use sqlx::postgres::PgConnectOptions;
 use uuid::Uuid;
-use crate::domain::models::order_details::{OrderDetails, SessionId, UserName};
+use crate::domain::models::order_details::{OrderDetails, SessionId, SessionStatus, UserName};
 use crate::domain::ports::order_repository::OrderRepository;
-use crate::domain::models::order::{CreateOrderError, DeleteOrderError, FindOrderError, Order};
+use crate::domain::models::order::{CreateOrderError, DeleteOrderError, FindOrderError, Order, UpdateOrderError};
 use crate::outbound::entities::order_details::{CreateOrderDetailsEntity, SessionStatusEntity};
 use sqlx::types::chrono::{DateTime, Utc};
 use crate::domain::models::order_item::OrderItem;
@@ -46,7 +46,7 @@ impl Postgres {
         Ok(())
     }
 
-    pub async fn find_details_by_session_id(
+    async fn find_details_by_session_id(
         &self,
         session_id: &SessionId,
     ) -> Result<FetchOrderDetailsEntity, sqlx::Error> {
@@ -69,7 +69,7 @@ impl Postgres {
         Ok(details)
 
     }
-    pub async fn find_order_details_by_username(&self,
+    async fn find_order_details_by_username(&self,
                                                 username: &UserName
     ) -> Result<Vec<FetchOrderDetailsEntity>, sqlx::Error> {
         let details: Vec<FetchOrderDetailsEntity> = sqlx::query_as!(
@@ -90,7 +90,7 @@ impl Postgres {
 
         Ok(details)
     }
-    pub async fn find_order_items_by_order_id(
+    async fn find_order_items_by_order_id(
         &self,
         order_id: &Uuid,
     ) -> Result<Vec<FetchOrderItemEntity>, sqlx::Error> {
@@ -192,7 +192,8 @@ impl Postgres {
     
     async fn process_details(&self, details: FetchOrderDetailsEntity) 
         -> Result<Order, FindOrderError> {
-        let items: Vec<FetchOrderItemEntity> = self.find_order_items_by_order_id(&details.id).await
+        let items: Vec<FetchOrderItemEntity> = self.find_order_items_by_order_id(&details.id)
+            .await
             .map_err(|e| {
                 FindOrderError::Unknown(anyhow!(e).context(format!(
                     "Error finding order items for order id {}"
@@ -220,12 +221,37 @@ impl Postgres {
 
         Ok(order)
     }
+
+    async fn update_order_details_status(
+        &self,
+        id: &Uuid,
+        status: SessionStatusEntity,
+    ) -> Result<FetchOrderDetailsEntity, sqlx::Error> {
+        let updated_details = sqlx::query_as!(
+            FetchOrderDetailsEntity,
+            r#"
+            UPDATE order_details
+            SET status = $1
+            WHERE id = $2
+            RETURNING id, username, status as "status: SessionStatusEntity",
+            session_id,
+            created_at as "created_at: DateTime<Utc>"
+            "#,
+            status as SessionStatusEntity,
+            id
+        )
+            .fetch_one(&self.pool)
+            .await?;
+
+        Ok(updated_details)
+    }
 }
 
 impl OrderRepository for Postgres {
     
     async fn find_order_by_session_id(&self, req: &SessionId) -> Result<Order, FindOrderError> {
-        let details = self.find_details_by_session_id(req).await
+        let details = self.find_details_by_session_id(req)
+            .await
             .map_err(|e| {
                 FindOrderError::Unknown(anyhow!(e).context(format!(
                     "Error finding order details by session {req}"
@@ -263,7 +289,9 @@ impl OrderRepository for Postgres {
             .await
             .context("failed to start Postgres transaction")?;
 
-        self.create_order_details(order_details, &mut tx).await.map_err(|e| {
+        self.create_order_details(order_details, &mut tx)
+            .await
+            .map_err(|e| {
             CreateOrderError::Unknown(anyhow!(e).context(format!(
                 "failed to save order with id {:?}",
                 req.details().order_id()
@@ -292,7 +320,9 @@ impl OrderRepository for Postgres {
     }
 
     async fn delete_order(&self, req: Uuid) -> Result<Uuid, DeleteOrderError> {
-        self.delete_order_by_id(req).await.map_err(|e| {
+        self.delete_order_by_id(req)
+            .await
+            .map_err(|e| {
             DeleteOrderError::Unknown(anyhow!(e).context(format!(
                 "failed to delete order with ID {:?}", req.clone()
             )))
@@ -318,5 +348,27 @@ impl OrderRepository for Postgres {
         
         self.process_details(details).await
         
+    }
+
+    async fn update_order_status(
+        &self, id: &Uuid,
+        status: &SessionStatus
+    ) -> Result<Order, UpdateOrderError> {
+        let updated_details = self
+            .update_order_details_status(id, status.clone().into())
+            .await
+            .map_err(|e| {
+                UpdateOrderError::Unknown(anyhow!(e).context(format!(
+                    "Failed to update order details with id {id}"
+                )))
+            })?;
+
+        self.process_details(updated_details)
+            .await
+            .map_err(|e| {
+            UpdateOrderError::Unknown(anyhow!(e).context(format!(
+                "Failed to process order details with id {id}"
+            )))
+        })
     }
 }

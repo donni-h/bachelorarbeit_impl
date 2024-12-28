@@ -255,6 +255,31 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "683d7910e743518b0e34f1186f92494becacb047c7b6bf616c96772180fef923"
 
 [[package]]
+name = "amqp_serde"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "787581044ca08ad61cdb3a4e21afba087fb8cdba3bb3e23ce69a7d091808014d"
+dependencies = [
+ "bytes",
+ "serde",
+ "serde_bytes_ng",
+]
+
+[[package]]
+name = "amqprs"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5e93684f1ae3c63429509ce3bf8a587bffc414f71a13810ed3e5f2c8757888b0"
+dependencies = [
+ "amqp_serde",
+ "async-trait",
+ "bytes",
+ "serde",
+ "serde_bytes",
+ "tokio",
+]
+
+[[package]]
 name = "android-tzdata"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -318,6 +343,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "async-trait"
+version = "0.1.83"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "721cae7de5c34fbb2acd27e21e6d2cf7b886dce0c27388d46c4e6c47ea4318dd"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.90",
+]
+
+[[package]]
 name = "atoi"
 version = "2.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -337,6 +373,7 @@ name = "bachelorarbeit"
 version = "0.1.0"
 dependencies = [
  "actix-web",
+ "amqprs",
  "anyhow",
  "async-stripe",
  "chrono",
@@ -344,6 +381,7 @@ dependencies = [
  "getset",
  "rust_decimal",
  "serde",
+ "serde_json",
  "sqlx",
  "thiserror 2.0.8",
  "tokio",
@@ -2158,6 +2196,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0b9781016e935a97e8beecf0c933758c97a5520d32930e460142b4cd80c6338e"
 dependencies = [
  "serde_derive",
+]
+
+[[package]]
+name = "serde_bytes"
+version = "0.11.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "387cc504cb06bb40a96c8e04e951fe01854cf6bc921053c954e4a606d9675c6a"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "serde_bytes_ng"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bdb0ebce8684e2253f964e8b6ce51f0ccc6666bbb448fb4a6788088bda6544b6"
+dependencies = [
+ "serde",
 ]
 
 [[package]]
