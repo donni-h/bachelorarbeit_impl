@@ -23,8 +23,13 @@ pub trait OrderRepository: Clone + Send + Sync + 'static {
          &self,
          req: uuid::Uuid,
     ) -> impl Future<Output = Result<uuid::Uuid, DeleteOrderError>> + Send;
-    //
+    
     fn delete_all_orders(
          &self,
      ) -> impl Future<Output = Result<(), DeleteOrderError>> + Send;
+    
+    fn find_order_by_id(
+        &self,
+        req: Uuid,
+    ) -> impl Future<Output = Result<Order, FindOrderError>> + Send;
 }

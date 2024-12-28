@@ -31,4 +31,6 @@ async fn main() {
     println!("{:#?}", orders_result);
     
     println!("{:#?}", orders_result.unwrap().len());
+    let res = service.delete_order(id_result.unwrap().details().order_id().clone()).await.unwrap();
+    println!("{:#?}", res);
 } 

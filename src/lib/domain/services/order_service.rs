@@ -74,19 +74,20 @@ where
      async fn find_orders_by_username(&self, req: &UserName) -> Result<Vec<Order>, FindOrderError> {
          self.repository.find_orders_by_username(req).await
      }
-//
-//     fn create_order(&self, req: &Order) -> impl Future<Output=Result<Order, CreateOrderError>> + Send {
-//         todo!()
-//     }
-//
+
+     async fn find_order_by_id(&self, req: Uuid) -> Result<Order, FindOrderError> {
+         self.repository.find_order_by_id(req).await
+     }
+
+   
 //     fn notify_checkout_status(&self, req: &SessionId) -> Result<(), NotifyCheckoutError> {
 //         todo!()
 //     }
 //
-//     fn delete_order(&self, req: Uuid) -> impl Future<Output=Result<(), DeleteOrderError>> + Send {
-//         todo!()
-//     }
-//
+     async fn delete_order(&self, req: Uuid) -> Result<Uuid, DeleteOrderError> {
+         self.repository.delete_order(req).await
+     }
+
      async fn delete_all_orders(&self) -> Result<(), DeleteOrderError> {
          self.repository.delete_all_orders().await
          

@@ -170,6 +170,25 @@ impl Postgres {
 
     }
     
+    async fn find_details_by_id(&self, id: &Uuid) -> Result<FetchOrderDetailsEntity, sqlx::Error> {
+        let details: FetchOrderDetailsEntity = sqlx::query_as!(
+            FetchOrderDetailsEntity,
+            r#"
+            SELECT id,
+                   username,
+                   status AS "status: SessionStatusEntity",
+                   session_id,
+                   created_at AS "created_at: DateTime<Utc>"
+            FROM order_details
+            WHERE id = $1
+            "#,
+            id
+        )
+            .fetch_one(&self.pool)
+            .await?;
+
+        Ok(details) 
+    }
     
     async fn process_details(&self, details: FetchOrderDetailsEntity) 
         -> Result<Order, FindOrderError> {
@@ -287,4 +306,17 @@ impl OrderRepository for Postgres {
         })
     }
 
+    async fn find_order_by_id(&self, req: Uuid) -> Result<Order, FindOrderError> {
+        let details = self.find_details_by_id(&req)
+            .await
+            .map_err(|e| {
+                FindOrderError::Unknown(anyhow!(e).context(format!(
+                    "Error finding order details by session {req}"
+                )))
+            })?;
+        
+        
+        self.process_details(details).await
+        
+    }
 }
