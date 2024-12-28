@@ -1,26 +1,25 @@
-use chrono::NaiveDateTime;
 use derive_more::From;
 use sqlx::FromRow;
 use sqlx::types::chrono::{DateTime, Utc};
 use sqlx::types::Uuid;
-use thiserror::Error;
+use crate::domain::models::order::FindOrderError;
 use crate::domain::models::order_details::{OrderDetails, SessionId, SessionStatus, UserName};
 
 #[derive(Debug, FromRow)]
 pub struct FetchOrderDetailsEntity {
     pub id: Uuid,
-    pub username: String,
-    pub status: Option<SessionStatusEntity>,
-    pub session_id: String,
-    pub created_at: DateTime<Utc>,
+    pub username: String,       // Nullable column
+    pub status: Option<SessionStatusEntity>, // Nullable column
+    pub session_id: String,    // Nullable column
+    pub created_at: DateTime<Utc>,     // Maps to TIMESTAMP
 }
 
-
-impl Into<OrderDetails> for FetchOrderDetailsEntity {
-    fn into(self) -> OrderDetails {
-        let username = UserName::new(self.username.as_str());
-        let status: Option<SessionStatus> = self.status.map(SessionStatusEntity::into_domain);
-        let session_id = SessionId::new(self.session_id.as_str());
+impl FetchOrderDetailsEntity {
+    pub fn into_domain(self) -> OrderDetails {
+        let status = self.status.map(SessionStatusEntity::into_domain);
+        let username = UserName::new(&self.username);
+        let session_id = SessionId::new(&self.session_id);
+        
         OrderDetails::new(
             self.id,
             username,
@@ -30,12 +29,21 @@ impl Into<OrderDetails> for FetchOrderDetailsEntity {
         )
     }
 }
-#[derive(Debug, sqlx::Type, From, Clone)]
+
+#[derive(Debug, sqlx::Type)]
 #[sqlx(type_name = "session_status", rename_all = "lowercase")]
 pub enum SessionStatusEntity {
     Open,
     Complete,
     Expired,
+}
+#[derive(Debug)]
+pub struct CreateOrderDetailsEntity {
+    pub id: Uuid,
+    pub username: String,
+    pub status: Option<SessionStatusEntity>,
+    pub session_id: String,
+    pub created_at: DateTime<Utc>,
 }
 
 impl From<SessionStatus> for SessionStatusEntity {
@@ -58,29 +66,18 @@ impl SessionStatusEntity {
     }
 }
 
-#[derive(Debug)]
-pub struct CreateOrderDetailsEntity {
-    pub id: Uuid,
-    pub username: String,
-    pub status: Option<SessionStatusEntity>,
-    pub session_id: String,
-}
-
 impl CreateOrderDetailsEntity {
-    pub fn from_domain(value: OrderDetails) -> Self {
-        let status = value.status().clone().map(Into::into);
+    pub fn from_domain(value: &OrderDetails) -> Self {
+        let status = match value.status().clone() {
+            Some(status) => Some(status.into()),
+            None => None,
+        };
         Self {
-            id: value.id().clone(),
+            id: value.order_id().clone(),
             username: value.username().to_string(),
             status,
             session_id: value.session_id().to_string(),
+            created_at: value.created_at().clone(),
         }
     }
-}
-#[derive(Debug, Error)]
-pub enum FindOrderDetailsError {
-    #[error("Couldn't find user belong to id: {id}")]
-    SessionIdNotFound {id: String},
-    #[error(transparent)]
-    Unknown(#[from] anyhow::Error),
 }

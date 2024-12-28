@@ -1,9 +1,16 @@
 use std::future::Future;
+use uuid::Uuid;
 use crate::domain::models::order_details::{SessionId, UserName};
-use crate::domain::models::order::{CreateOrderError, DeleteOrderError, FindOrderError, Order};
+use crate::domain::models::order::{CreateOrderError, CreateOrderRequest, DeleteOrderError, FindOrderError, Order};
 
 pub trait OrderService: Clone + Send + Sync + 'static {
-    fn find_order_by_session_id(
+
+  fn create_order(
+        &self,
+        req: &CreateOrderRequest,
+    ) -> impl Future<Output = Result<Order, CreateOrderError>> + Send;
+
+   fn find_order_by_session_id(
         &self,
         req: &SessionId,
     ) -> impl Future<Output = Result<Order, FindOrderError>> + Send;
@@ -12,22 +19,24 @@ pub trait OrderService: Clone + Send + Sync + 'static {
         &self,
         req: &UserName,
     ) -> impl Future<Output = Result<Vec<Order>, FindOrderError>> + Send;
-
-    fn create_order(
+    
+    fn find_order_by_id(
         &self,
-        req: &Order,
-    ) -> impl Future<Output = Result<Order, CreateOrderError>> + Send;
-
-    fn notify_checkout_status(
-        &self,
-        req: &SessionId,
-    ) -> impl Future<Output = Result<(), anyhow::Error>> + Send;
+        req: Uuid,
+    ) -> impl Future<Output = Result<Order, FindOrderError>> + Send;
+    
+    
+    //fn notify_checkout_status(
+    //    &self,
+    //    req: &SessionId,
+    //) -> impl Future<Output = Result<(), anyhow::Error>> + Send;
 
     fn delete_order(
         &self,
-        req: uuid::Uuid,
-    ) -> impl Future<Output = Result<(), DeleteOrderError>> + Send;
-
+        req: Uuid,
+    ) -> impl Future<Output = Result<Uuid, DeleteOrderError>> + Send;
+    
+    
     fn delete_all_orders(
         &self,
     ) -> impl Future<Output = Result<(), DeleteOrderError>> + Send;

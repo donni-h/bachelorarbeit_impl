@@ -1,8 +1,9 @@
-use derive_more::Display;
+use derive_more::{AsRef, Display, From};
 use getset::Getters;
 use rust_decimal::Decimal;
 use rust_decimal::prelude::FromPrimitive;
 use thiserror::Error;
+use uuid::Uuid;
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Getters)]
 #[getset(get = "pub")]
@@ -14,7 +15,7 @@ pub struct OrderItem {
 }
 
 impl OrderItem {
-    pub fn new(id: uuid::Uuid, product_name: ProductName, item_id: uuid::Uuid, price: Price) -> Self {
+    pub fn new(id: Uuid, product_name: ProductName, item_id: uuid::Uuid, price: Price) -> Self {
         Self {id, product_name, item_id, price,}
     }
 }
@@ -28,7 +29,7 @@ impl ProductName {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display, AsRef)]
 pub struct Price(Decimal);
 
 #[derive(Clone, Debug, Error)]
@@ -48,5 +49,20 @@ impl Price {
             Ok(Self(value))
         }
 
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, From, Getters)]
+#[getset(get = "pub")]
+pub struct CreateOrderItemRequest {
+    id: Uuid,
+    product_name: ProductName,
+    item_id: Uuid,
+    price: Price,
+}
+
+impl CreateOrderItemRequest {
+    pub fn new(product_name: ProductName, item_id: uuid::Uuid, price: Price) -> Self {
+        Self {id: Uuid::new_v4(), product_name, item_id, price}
     }
 }
