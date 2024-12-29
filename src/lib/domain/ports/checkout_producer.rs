@@ -4,8 +4,8 @@ use crate::domain::models::order_details::{SessionStatus, UserName};
 
 pub trait CheckoutProducer: Clone + Send + Sync + 'static {
     fn notify_order_result(&self,
-                           username: UserName,
-                           status: SessionStatus,
+                           username: &UserName,
+                           status: &SessionStatus,
     ) -> impl Future<Output=Result<(), NotifyError>> + Send;
 }
 

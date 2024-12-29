@@ -1,6 +1,6 @@
 use std::future::Future;
 use std::sync::Arc;
-use anyhow::anyhow;
+use anyhow::{anyhow, Error};
 use chrono::Utc;
 use stripe::Object;
 use uuid::Uuid;
@@ -102,10 +102,17 @@ where
          self.repository.find_order_by_id(req).await
      }
 
-   
-//     fn notify_checkout_status(&self, req: &SessionId) -> Result<(), NotifyCheckoutError> {
-//         todo!()
-//     }
+     async fn notify_checkout_status(&self, req: &SessionId) -> Result<(), Error> {
+         let order = self.repository.find_order_by_session_id(req).await?;
+
+         let maybe_status = self.payment_service.retrieve_checkout_status(req).await?;
+
+         if let Some(status) = maybe_status {
+             self.checkout_producer.notify_order_result(order.details().username(), &status).await?;
+             Ok(())
+         } else { Err(anyhow!("Order doesn't have a checkout status")) }
+     }
+
 
      async fn delete_order(&self, req: Uuid) -> Result<Uuid, DeleteOrderError> {
          self.repository.delete_order(req).await

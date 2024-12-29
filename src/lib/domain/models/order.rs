@@ -60,8 +60,6 @@ pub enum FindOrderError {
 
 #[derive(Debug, Error)]
 pub enum CreateOrderError {
-    #[error("order already exists")]
-    Duplicate,
     #[error("Order must contain items")]
     NoItems,
     #[error(transparent)]

@@ -1,0 +1,69 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            UPDATE order_details\n            SET status = $1\n            WHERE id = $2\n            RETURNING id, username, status as \"status: SessionStatusEntity\",\n            session_id,\n            created_at as \"created_at: DateTime<Utc>\"\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "username",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "status: SessionStatusEntity",
+        "type_info": {
+          "Custom": {
+            "name": "session_status",
+            "kind": {
+              "Enum": [
+                "open",
+                "complete",
+                "expired"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "session_id",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "created_at: DateTime<Utc>",
+        "type_info": "Timestamp"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        {
+          "Custom": {
+            "name": "session_status",
+            "kind": {
+              "Enum": [
+                "open",
+                "complete",
+                "expired"
+              ]
+            }
+          }
+        },
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false,
+      false
+    ]
+  },
+  "hash": "e2446ffa37b301ac4ff41509715a52b1ff38b2e677f1b50b9bfa78fad4126136"
+}

@@ -1,0 +1,18 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO order_item (id, product_name, item_id, price, order_id)\n            SELECT * FROM UNNEST($1::Uuid[], $2::text[], $3::Uuid[], $4::Decimal[], $5::Uuid[])\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "UuidArray",
+        "TextArray",
+        "UuidArray",
+        "NumericArray",
+        "UuidArray"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "20996ee06e84d77e2acee433eb72c8b437a6fb57f218fa89f66322bd725f46b0"
+}

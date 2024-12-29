@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM order_details",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "89ba9bfc328663f51086831cf02d7ca7fd8164365cf21242d40aef144df6bddb"
+}

@@ -26,10 +26,10 @@ pub trait OrderService: Clone + Send + Sync + 'static {
     ) -> impl Future<Output = Result<Order, FindOrderError>> + Send;
     
     
-    //fn notify_checkout_status(
-    //    &self,
-    //    req: &SessionId,
-    //) -> impl Future<Output = Result<(), anyhow::Error>> + Send;
+    fn notify_checkout_status(
+        &self,
+        req: &SessionId,
+    ) -> impl Future<Output = Result<(), anyhow::Error>> + Send;
 
     fn delete_order(
         &self,

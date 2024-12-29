@@ -55,8 +55,8 @@ impl RabbitMQ {
 
 impl CheckoutProducer for RabbitMQ {
     async fn notify_order_result(&self,
-                                 username: UserName,
-                                 status: SessionStatus
+                                 username: &UserName,
+                                 status: &SessionStatus
     ) -> Result<(), NotifyError>{
         let result = CheckoutResult {
             username: username.to_string(),
