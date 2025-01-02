@@ -1,20 +1,22 @@
 use actix_web::http::StatusCode;
 use actix_web::Responder;
 use actix_web::web::{Data, Query};
-use serde::Serialize;
+use serde::Deserialize;
 use uuid::Uuid;
-use crate::domain::models::order::Order;
 use crate::domain::ports::order_service::OrderService;
 use crate::domain::ports::payment_service::PaymentService;
 use crate::inbound::http::AppState;
 use crate::inbound::http::handlers::{ApiError, ApiResponseBody};
 use crate::inbound::http::responses::OrderResponseData;
 
-pub struct GetByIdHttpRequestQuery(Uuid);
+#[derive(Debug, Clone, Deserialize)]
+pub struct GetByIdHttpRequestQuery{
+    order_id: Uuid,
+}
 
 impl GetByIdHttpRequestQuery {
     fn into_domain(self) -> Uuid {
-        self.0
+        self.order_id
     }
 }
 

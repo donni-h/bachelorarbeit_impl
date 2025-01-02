@@ -1,29 +1,27 @@
-use std::str::FromStr;
 use std::sync::Arc;
-use actix_web::error::DispatchError::Service;
-use chrono::Utc;
 use dotenv::dotenv;
-use rust_decimal::Decimal;
-use rust_decimal::prelude::{FromPrimitive, ToPrimitive};
-use stripe::CheckoutSessionId;
-use uuid::Uuid;
-use bachelorarbeit::domain::models::order::{CreateOrderRequest, Order, UpdateOrderStatusRequest};
-use bachelorarbeit::domain::models::order_details::{OrderDetails, SessionId, UserName};
-use bachelorarbeit::domain::models::order_details::SessionStatus;
-use bachelorarbeit::domain::models::order_item::{CreateOrderItemRequest, OrderItem, Price, ProductName};
-use bachelorarbeit::domain::ports::checkout_producer::CheckoutProducer;
-use bachelorarbeit::domain::ports::order_repository::OrderRepository;
-use bachelorarbeit::domain::ports::order_service::OrderService;
-use bachelorarbeit::domain::ports::payment_service::PaymentService;
+use jsonwebtoken::{Algorithm, Validation};
 use bachelorarbeit::domain::services::order_service::DefaultOrderService;
 use bachelorarbeit::domain::services::payment_service::StripeService;
 use bachelorarbeit::inbound::http::{HttpServer, HttpServerConfig};
+use bachelorarbeit::inbound::http::authorization::keycloak::fetch_jwk_set;
 use bachelorarbeit::outbound::postgres::Postgres;
 use bachelorarbeit::outbound::rabbitmq::{RabbitMQ};
 
 #[tokio::main]
 async fn main() {
     dotenv().ok();
+    let keycloak_url = "http://localhost:3000/auth/realms/shop";
+    let keycloak_issuer = "http://localhost:3000/auth/realms/shop";
+
+    let keys = fetch_jwk_set(keycloak_url)
+        .await
+        .expect("Failed to fetch JWK Set");
+
+    let mut validator = Validation::new(Algorithm::RS256);
+    validator.set_issuer(&[keycloak_issuer]);
+    validator.set_audience(&["account"]);
+
     let secret_key = std::env::var("STRIPE_SK").expect("missing stripe secret key");
     let postgres_url = std::env::var("DATABASE_URL").expect("missing DATABASE_URL");
     let domain = "http://127.0.0.1:8080";
@@ -37,6 +35,6 @@ async fn main() {
 
     let config = HttpServerConfig {port: "8080"};
     
-    HttpServer::new(order_service, payment_service, &config).await.expect("server crashed");
+    HttpServer::new(order_service, payment_service, keys, validator, &config).await.expect("server crashed");
     
 }

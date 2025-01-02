@@ -1,7 +1,6 @@
 use std::future::Future;
-use stripe::{CheckoutSession, CheckoutSessionStatus, StripeError};
+use stripe::CheckoutSession;
 use thiserror::Error;
-use crate::domain::models::order::{CreateOrderError, CreateOrderRequest, Order};
 use crate::domain::models::order_details::{SessionId, SessionStatus};
 use crate::domain::models::order_item::OrderItem;
 

@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
 use uuid::Uuid;
 use crate::domain::models::order::Order;
 use crate::domain::models::order_details::OrderDetails;

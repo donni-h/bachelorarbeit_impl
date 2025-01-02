@@ -1,8 +1,5 @@
-use std::future::Future;
-use std::sync::mpsc::channel;
 use amqprs::BasicProperties;
-use amqprs::callbacks::{DefaultChannelCallback, DefaultConnectionCallback};
-use amqprs::channel::{BasicPublishArguments, Channel, ExchangeDeclareArguments, QueueBindArguments, QueueDeclareArguments};
+use amqprs::channel::{BasicPublishArguments, Channel, QueueDeclareArguments};
 use amqprs::connection::{Connection, OpenConnectionArguments};
 use serde::Serialize;
 use crate::domain::models::order_details::{SessionStatus, UserName};

@@ -1,3 +1,4 @@
+use std::ops::Deref;
 use actix_web::{web, Responder};
 use actix_web::http::StatusCode;
 use actix_web::web::Json;
@@ -10,6 +11,7 @@ use crate::domain::models::order_item::{CreateOrderItemRequest, Price, PriceErro
 use crate::domain::ports::order_service::OrderService;
 use crate::domain::ports::payment_service::PaymentService;
 use crate::inbound::http::AppState;
+use crate::inbound::http::extractors::auth::KeycloakToken;
 use crate::inbound::http::handlers::{ApiError, ApiResponseBody};
 
 #[derive(Debug, Clone, Deserialize)]
@@ -69,9 +71,9 @@ impl From<CreateOrderError> for ApiError {
 }
 
 impl CreateOrderHttpRequestBody {
-    fn try_into_domain(self) -> Result<CreateOrderRequest, ParseCreateOrderHttpRequestError> {
-        let username = UserName::new("Bitte funktioniere!");
-
+    fn try_into_domain(self, token: &KeycloakToken) -> Result<CreateOrderRequest, ParseCreateOrderHttpRequestError> {
+        let username = UserName::new(token.claims().preferred_username());
+        println!("{:#?}", username);
         let items = self
             .items
             .into_iter()
@@ -85,10 +87,11 @@ impl CreateOrderHttpRequestBody {
 
 pub async fn create_checkout<OS: OrderService, PS: PaymentService>(
     state: web::Data<AppState<OS, PS>>,
-    body: Json<CreateOrderHttpRequestBody>
+    body: Json<CreateOrderHttpRequestBody>,
+    token: KeycloakToken,
 ) -> Result<impl Responder, ApiError> {
     println!("{:#?}", body);
-    let domain_req = body.into_inner().try_into_domain()?;
+    let domain_req = body.into_inner().try_into_domain(&token)?;
 
     state
         .order_service

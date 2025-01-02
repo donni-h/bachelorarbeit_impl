@@ -1,10 +1,8 @@
-use crate::domain::models::order::CreateOrderRequest;
 use crate::domain::models::order_details::{SessionId, SessionStatus};
 use crate::domain::ports::payment_service::{PaymentService, PaymentServiceError};
 use std::str::FromStr;
 use anyhow::anyhow;
 use stripe::{CheckoutSession, CheckoutSessionBillingAddressCollection, CheckoutSessionId, CheckoutSessionMode, CheckoutSessionStatus, Client, CreateCheckoutSession, CreateCheckoutSessionLineItems, CreateCheckoutSessionLineItemsPriceData, CreateCheckoutSessionLineItemsPriceDataProductData, CreateCheckoutSessionPaymentMethodTypes, CreateCheckoutSessionShippingAddressCollection, CreateCheckoutSessionShippingAddressCollectionAllowedCountries, Currency, StripeError};
-use thiserror::Error;
 use crate::domain::models::order_item::OrderItem;
 
 #[derive(Clone)]

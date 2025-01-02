@@ -2,7 +2,6 @@ use derive_more::From;
 use sqlx::FromRow;
 use sqlx::types::chrono::{DateTime, Utc};
 use sqlx::types::Uuid;
-use crate::domain::models::order::FindOrderError;
 use crate::domain::models::order_details::{OrderDetails, SessionId, SessionStatus, UserName};
 
 #[derive(Debug, FromRow)]

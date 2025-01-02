@@ -1,6 +1,6 @@
 use actix_web::http::StatusCode;
 use actix_web::Responder;
-use actix_web::web::{Data, Query};
+use actix_web::web::Data;
 use crate::domain::ports::order_service::OrderService;
 use crate::domain::ports::payment_service::PaymentService;
 use crate::inbound::http::AppState;
