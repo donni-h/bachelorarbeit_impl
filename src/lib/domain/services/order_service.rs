@@ -127,6 +127,6 @@ where
          &self,
          req: UpdateOrderStatusRequest,
      ) -> Result<Order, UpdateOrderError> {
-         self.repository.update_order_status(req.id(), req.status()).await
+         self.repository.update_order_status(req.id(), req.status().as_ref()).await
      }
  }

@@ -36,6 +36,6 @@ pub trait OrderRepository: Clone + Send + Sync + 'static {
     fn update_order_status(
         &self,
         id: &Uuid,
-        status: &SessionStatus,
+        status: Option<&SessionStatus>,
     ) -> impl Future<Output=Result<Order, UpdateOrderError>> + Send;
 }

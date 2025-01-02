@@ -16,12 +16,11 @@ use crate::inbound::http::handlers::{ApiError, ApiResponseBody};
 #[serde(rename_all = "camelCase")]
 pub struct CreateOrderHttpRequestBody {
     items: Vec<CheckoutItem>,
-    total_price: f64,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct CheckoutItem {
+pub struct CheckoutItem {
     name: String,
     item_price: f64,
     plant_id: Uuid,

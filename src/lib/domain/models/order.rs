@@ -41,13 +41,14 @@ impl CreateOrderRequest {
 #[getset(get = "pub")]
 pub struct UpdateOrderStatusRequest {
     id: Uuid,
-    status: SessionStatus,
+    status: Option<SessionStatus>,
 }
 
 impl UpdateOrderStatusRequest {
-    pub fn new(id: Uuid, status: SessionStatus) -> Self {
+    pub fn new(id: Uuid, status: Option<SessionStatus>) -> Self {
         Self { id, status }
     }
+    
 }
 
 #[derive(Debug, Error)]

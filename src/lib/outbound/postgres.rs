@@ -1,19 +1,17 @@
-use std::fmt::format;
-use std::future::Future;
-use std::str::FromStr;
+use crate::domain::models::order::{CreateOrderError, DeleteOrderError, FindOrderError, Order, UpdateOrderError};
+use crate::domain::models::order_details::{SessionId, SessionStatus, UserName};
+use crate::domain::models::order_item::OrderItem;
+use crate::domain::ports::order_repository::OrderRepository;
+use crate::outbound::entities::order_details::FetchOrderDetailsEntity;
+use crate::outbound::entities::order_details::{CreateOrderDetailsEntity, SessionStatusEntity};
+use crate::outbound::entities::order_item::{CreateOrderItemEntity, FetchOrderItemEntity};
 use anyhow::{anyhow, Context};
 use rust_decimal::Decimal;
-use sqlx::{query_as, Executor, PgPool, Transaction};
 use sqlx::postgres::PgConnectOptions;
-use uuid::Uuid;
-use crate::domain::models::order_details::{OrderDetails, SessionId, SessionStatus, UserName};
-use crate::domain::ports::order_repository::OrderRepository;
-use crate::domain::models::order::{CreateOrderError, DeleteOrderError, FindOrderError, Order, UpdateOrderError};
-use crate::outbound::entities::order_details::{CreateOrderDetailsEntity, SessionStatusEntity};
 use sqlx::types::chrono::{DateTime, Utc};
-use crate::domain::models::order_item::OrderItem;
-use crate::outbound::entities::order_details::FetchOrderDetailsEntity;
-use crate::outbound::entities::order_item::{CreateOrderItemEntity, FetchOrderItemEntity};
+use sqlx::{Executor, PgPool, Transaction};
+use std::str::FromStr;
+use uuid::Uuid;
 
 #[derive(Debug, Clone)]
 pub struct Postgres {
@@ -225,7 +223,7 @@ impl Postgres {
     async fn update_order_details_status(
         &self,
         id: &Uuid,
-        status: SessionStatusEntity,
+        status: Option<SessionStatusEntity>,
     ) -> Result<FetchOrderDetailsEntity, sqlx::Error> {
         let updated_details = sqlx::query_as!(
             FetchOrderDetailsEntity,
@@ -237,7 +235,7 @@ impl Postgres {
             session_id,
             created_at as "created_at: DateTime<Utc>"
             "#,
-            status as SessionStatusEntity,
+            status as Option<SessionStatusEntity>,
             id
         )
             .fetch_one(&self.pool)
@@ -352,10 +350,11 @@ impl OrderRepository for Postgres {
 
     async fn update_order_status(
         &self, id: &Uuid,
-        status: &SessionStatus
+        status: Option<&SessionStatus>
     ) -> Result<Order, UpdateOrderError> {
+        let status_entity = status.map(|s| SessionStatusEntity::from(s.clone()));
         let updated_details = self
-            .update_order_details_status(id, status.clone().into())
+            .update_order_details_status(id, status_entity)
             .await
             .map_err(|e| {
                 UpdateOrderError::Unknown(anyhow!(e).context(format!(

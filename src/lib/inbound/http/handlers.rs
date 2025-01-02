@@ -2,11 +2,23 @@ use actix_web::http::StatusCode;
 use actix_web::{HttpRequest, HttpResponse, Responder, ResponseError};
 use actix_web::body::BoxBody;
 use actix_web::error::JsonPayloadError;
+use chrono::{DateTime, Utc};
 use derive_more::Display;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use thiserror::Error;
+use uuid::Uuid;
+use crate::domain::models::order::{DeleteOrderError, FindOrderError, Order, UpdateOrderError};
+use crate::domain::models::order_details::{OrderDetails, SessionStatus};
+use crate::domain::models::order_item::OrderItem;
+use crate::domain::ports::payment_service::PaymentServiceError;
 
 pub mod create_checkout;
+mod success;
+mod cancel;
+mod get_by_id;
+mod get_all_orders_for_user;
+mod delete_by_id;
+mod delete_all_orders;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct ApiErrorData {
@@ -54,6 +66,52 @@ pub enum ApiError {
 impl From<anyhow::Error> for ApiError {
     fn from(e: anyhow::Error) -> Self {
         Self::InternalServerError(e.to_string())
+    }
+}
+
+impl From<FindOrderError> for ApiError {
+    fn from(e: FindOrderError) -> Self {
+        match e {
+            FindOrderError::IdNotFound { id } => {
+                Self::NotFound(format!("Order ID not found: {}", id))
+            }
+            FindOrderError::Unknown(_) => {
+                Self::InternalServerError("Internal server error".to_string())
+            }
+        }
+    }
+}
+
+impl From<UpdateOrderError> for ApiError {
+    fn from(e: UpdateOrderError) -> Self {
+        match e {
+            UpdateOrderError::NotFound => {
+                Self::NotFound("Order not found".to_string())
+            }
+            UpdateOrderError::Unknown(_) => {
+                Self::InternalServerError("Internal server error".to_string()) 
+            }
+        }
+    }
+}
+
+impl From<PaymentServiceError> for ApiError {
+    fn from(e: PaymentServiceError) -> Self {
+        match e {
+            PaymentServiceError::Unknown(_) => {
+                Self::InternalServerError("Internal server error while processing payment status"
+                    .to_string())
+            }
+            PaymentServiceError::InvalidSessionId(id) => {
+                Self::NotFound(format!("Invalid session ID: {}", id))
+            }
+        }
+    }
+}
+
+impl From<DeleteOrderError> for ApiError {
+    fn from(e: DeleteOrderError) -> Self {
+        ApiError::InternalServerError("Internal server error".to_string()) 
     }
 }
 
