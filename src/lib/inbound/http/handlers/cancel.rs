@@ -26,7 +26,7 @@ pub async fn cancel<OS: OrderService, PS: PaymentService>(
     query: Query<CancelHttpRequestQuery>
 ) -> Result<impl Responder, ApiError> {
 
-    println!("{:?}", auth);
+    println!("{auth:?}");
     let domain_req = query.into_inner().into_domain();
     let order = state
         .order_service
@@ -41,10 +41,10 @@ pub async fn cancel<OS: OrderService, PS: PaymentService>(
         .await
         .map_err(ApiError::from)?;
 
-    let order_id = order.details().order_id().clone();
+    let order_id = order.details().order_id();
     state
         .order_service
-        .delete_order(order_id)
+        .delete_order(*order_id)
         .await
         .map_err(ApiError::from)
         .map(|id | ApiResponseBody::new(StatusCode::OK, id))

@@ -32,7 +32,7 @@ pub async fn success<OS: OrderService, PS: PaymentService>(
         .await
         .map_err(ApiError::from)?;
     
-    let order_id = order.details().order_id().clone();
+    let order_id = *order.details().order_id();
     let new_status = state
         .payment_service
         .retrieve_checkout_status(&domain_req)

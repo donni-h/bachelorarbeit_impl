@@ -14,5 +14,5 @@ pub async fn delete_all_orders<OS: OrderService, PS: PaymentService>(
         .delete_all_orders()
         .await
         .map_err(ApiError::from)
-        .map(|_| ApiResponseBody::new(StatusCode::OK, ()))
+        .map(|()| ApiResponseBody::new(StatusCode::OK, ()))
 }

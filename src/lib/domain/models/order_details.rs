@@ -45,3 +45,21 @@ impl SessionId {
         Self(raw.to_string())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::domain::models::order_details::{SessionId, UserName};
+
+    #[test]
+    fn new_username_trim() {
+        let username = UserName::new(" Hannes ");
+
+        assert_eq!(username.to_string(), "Hannes");
+    }
+
+    #[test]
+    fn new_session_id() {
+        let session_id = SessionId::new("abc");
+        assert_eq!(session_id.to_string(), "abc");
+    }
+}

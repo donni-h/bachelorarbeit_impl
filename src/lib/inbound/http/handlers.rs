@@ -21,7 +21,7 @@ pub struct ApiErrorData {
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct ApiResponseBody<T: Serialize> {
+pub struct ApiResponseBody<T> {
     status_code: u16,
     data: T,
 }
@@ -68,7 +68,7 @@ impl From<FindOrderError> for ApiError {
     fn from(e: FindOrderError) -> Self {
         match e {
             FindOrderError::IdNotFound { id } => {
-                Self::NotFound(format!("Order ID not found: {}", id))
+                Self::NotFound(format!("Order ID not found: {id}"))
             }
             FindOrderError::Unknown(_) => {
                 Self::InternalServerError("Internal server error".to_string())
@@ -98,7 +98,7 @@ impl From<PaymentServiceError> for ApiError {
                     .to_string())
             }
             PaymentServiceError::InvalidSessionId(id) => {
-                Self::NotFound(format!("Invalid session ID: {}", id))
+                Self::NotFound(format!("Invalid session ID: {id}"))
             }
         }
     }
@@ -113,9 +113,9 @@ impl From<DeleteOrderError> for ApiError {
 impl ResponseError for ApiError {
     fn status_code(&self) -> StatusCode {
         match self {
-            ApiError::InternalServerError(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            ApiError::UnprocessableEntity(_) => StatusCode::UNPROCESSABLE_ENTITY,
-            ApiError::NotFound(_) => StatusCode::NOT_FOUND,
+            Self::InternalServerError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            Self::UnprocessableEntity(_) => StatusCode::UNPROCESSABLE_ENTITY,
+            Self::NotFound(_) => StatusCode::NOT_FOUND,
         }
     }
 
@@ -132,10 +132,10 @@ impl From<JsonPayloadError> for ApiError {
         let message = match err {
             JsonPayloadError::Overflow { limit: _ }   => "JSON payload is too large".to_string(),
             JsonPayloadError::ContentType => "Invalid content type".to_string(),
-            JsonPayloadError::Deserialize(ref e) => format!("Deserialization error: {}", e),
+            JsonPayloadError::Deserialize(ref e) => format!("Deserialization error: {e}"),
             _ => "Invalid JSON payload".to_string(),
         };
 
-        ApiError::UnprocessableEntity(message)
+        Self::UnprocessableEntity(message)
     }
 }

@@ -35,7 +35,7 @@ impl TryFrom<CheckoutItem> for CreateOrderItemRequest {
         let price = Price::new(item.item_price)?;
         let product_name = ProductName::new(&item.name);
 
-        Ok(CreateOrderItemRequest::new(product_name, item.plant_id, price))
+        Ok(Self::new(product_name, item.plant_id, price))
     }
 }
 
@@ -73,7 +73,6 @@ impl From<CreateOrderError> for ApiError {
 impl CreateOrderHttpRequestBody {
     fn try_into_domain(self, token: &KeycloakToken) -> Result<CreateOrderRequest, ParseCreateOrderHttpRequestError> {
         let username = UserName::new(token.claims().preferred_username());
-        println!("{:#?}", username);
         let items = self
             .items
             .into_iter()
@@ -90,7 +89,7 @@ pub async fn create_checkout<OS: OrderService, PS: PaymentService>(
     body: Json<CreateOrderHttpRequestBody>,
     token: KeycloakToken,
 ) -> Result<impl Responder, ApiError> {
-    println!("{:#?}", body);
+    println!("{body:#?}");
     let domain_req = body.into_inner().try_into_domain(&token)?;
 
     state

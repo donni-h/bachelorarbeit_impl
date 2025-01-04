@@ -7,7 +7,7 @@ use crate::domain::models::order_item::OrderItem;
 
 /// Generic response structure shared by all API responses.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-pub struct ResponseBody<T: Serialize> {
+pub struct ResponseBody<T> {
     status_code: u16,
     data: T,
 }

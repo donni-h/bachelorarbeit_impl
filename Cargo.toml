@@ -11,6 +11,22 @@ path = "src/lib/lib.rs"
 name = "bachelorarbeit_server"
 path = "src/bin/server/main.rs"
 
+[profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = "symbols"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+enum_glob_use = "deny"
+pedantic = "deny"
+nursery = "deny"
+unwrap_used ="deny"
+
 [dependencies]
 actix-web = "4.9.0"
 anyhow = "1.0.94"
@@ -31,3 +47,7 @@ env_logger = "0.11.6"
 jsonwebtoken = "9.3.0"
 futures = "0.3.31"
 reqwest = { version = "0.12.12", features = ["json"] }
+
+[dev-dependencies]
+sqlx = { version = "0.8.2", features = ["runtime-tokio", "postgres", "macros", "chrono", "uuid", "rust_decimal", "migrate"] }
+testcontainers-modules = { version = "0.11.4", features = ["postgres"] }

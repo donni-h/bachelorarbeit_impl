@@ -70,3 +70,21 @@ impl CreateOrderItemRequest {
         Self {id: Uuid::new_v4(), product_name, item_id, price}
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::domain::models::order_item::{Price, PriceError};
+
+    #[test]
+    fn price_negative_error() {
+        let price_result = Price::new(-12.0);
+        assert!(matches!(price_result, Err(PriceError::Negative)));
+    }
+
+    #[test]
+    fn price_zero_error() {
+        let price_result = Price::new(0.0);
+        assert!(matches!(price_result, Err(PriceError::Negative)));
+    }
+
+}

@@ -11,9 +11,11 @@ use sqlx::postgres::PgConnectOptions;
 use sqlx::types::chrono::{DateTime, Utc};
 use sqlx::{Executor, PgPool, Transaction};
 use std::str::FromStr;
+use getset::Getters;
 use uuid::Uuid;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Getters)]
+#[getset(get = "pub")]
 pub struct Postgres {
     pool: PgPool,
 }
