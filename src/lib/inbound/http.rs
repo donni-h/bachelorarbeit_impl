@@ -4,19 +4,27 @@ use actix_web::web;
 use actix_web::web::{Data, ServiceConfig};
 use anyhow::Context;
 use jsonwebtoken::{DecodingKey, Validation};
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 use crate::domain::ports::order_service::OrderService;
 use crate::domain::ports::payment_service::PaymentService;
 use crate::domain::services::order_service::DefaultOrderService;
 use crate::domain::services::payment_service::StripeService;
 use crate::inbound::http::handlers::cancel::cancel;
-use crate::inbound::http::handlers::create_checkout::create_checkout;
+use crate::inbound::http::handlers::create_checkout::{create_checkout, CreateOrderHttpRequestBody};
 use crate::inbound::http::handlers::delete_all_orders::delete_all_orders;
 use crate::inbound::http::handlers::delete_by_id::delete_order_by_id;
 use crate::inbound::http::handlers::get_by_id::get_order_by_id;
 use crate::inbound::http::handlers::success::success;
 use crate::outbound::postgres::Postgres;
 use crate::outbound::rabbitmq::RabbitMQ;
-
+use crate::inbound::http::handlers::create_checkout::__path_create_checkout;
+use crate::inbound::http::handlers::cancel::__path_cancel;
+use crate::inbound::http::handlers::delete_all_orders::__path_delete_all_orders;
+use crate::inbound::http::handlers::delete_by_id::__path_delete_order_by_id;
+use crate::inbound::http::handlers::get_by_id::__path_get_order_by_id;
+use crate::inbound::http::handlers::success::__path_success;
+use crate::inbound::http::responses::OrderResponseData;
 mod handlers;
 mod responses;
 mod extractors;
@@ -55,6 +63,8 @@ impl HttpServer {
             payment_service,
         });
 
+        let openapi = ApiDoc::openapi();
+
         let auth_state = Data::new(AuthState {
             auth_keys: Arc::new(auth_key),
             validator: Arc::new(validator),
@@ -65,6 +75,10 @@ impl HttpServer {
                 .app_data(app_state.clone())
                 .app_data(auth_state.clone())
                 .configure(api_routes)
+                .service(
+                    SwaggerUi::new("/swagger-ui/{_:.*}")
+                        .url("/api-docs/openapi.json", openapi.clone())
+                )
         })
             .bind(format!("0.0.0.0:{}", config.port))
             .with_context(|| format!("Failed to bind to {}", config.port))?
@@ -87,3 +101,22 @@ fn api_routes(cfg: &mut ServiceConfig) {
             .route("/orders", web::delete().to(delete_all_orders::<OrderService, PaymentService>))
     );
 }
+
+#[derive(OpenApi)]
+#[openapi(
+    paths(
+        create_checkout,
+        cancel,
+        delete_all_orders,
+        delete_order_by_id,
+        get_order_by_id,
+        success,
+    ),
+    components(
+        schemas(
+            CreateOrderHttpRequestBody,
+            OrderResponseData
+        )
+    )
+)]
+pub struct ApiDoc;

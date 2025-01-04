@@ -6,6 +6,13 @@ use crate::domain::ports::payment_service::PaymentService;
 use crate::inbound::http::AppState;
 use crate::inbound::http::handlers::{ApiError, ApiResponseBody};
 
+#[utoipa::path(
+  delete,
+  path="/api/payment/orders",
+  responses(
+    (status = 200, description = "Successfully deleted all order")
+  )
+)]
 pub async fn delete_all_orders<OS: OrderService, PS: PaymentService>(
     state: Data<AppState<OS, PS>>,
 ) -> Result<impl Responder, ApiError> {

@@ -2,6 +2,7 @@ use actix_web::http::StatusCode;
 use actix_web::Responder;
 use actix_web::web::{Data, Query};
 use serde::Deserialize;
+use utoipa::IntoParams;
 use crate::domain::models::order::UpdateOrderStatusRequest;
 use crate::domain::models::order_details::SessionId;
 use crate::domain::ports::order_service::OrderService;
@@ -10,7 +11,7 @@ use crate::inbound::http::AppState;
 use crate::inbound::http::handlers::{ApiError, ApiResponseBody};
 use crate::inbound::http::responses::OrderResponseData;
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, IntoParams)]
 pub struct SuccessHttpRequestQuery{
     session_id: String,
 }
@@ -21,6 +22,16 @@ impl SuccessHttpRequestQuery {
     }
 }
 
+#[utoipa::path(
+    get,
+    path="/api/payment/success",
+    params(
+        SuccessHttpRequestQuery
+    ),
+    responses(
+    (status = 200, description = "Order", body = OrderResponseData)
+    )
+)]
 pub async fn success<OS: OrderService, PS: PaymentService>(
     state: Data<AppState<OS, PS>>,
     query: Query<SuccessHttpRequestQuery>

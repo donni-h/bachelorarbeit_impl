@@ -4,6 +4,7 @@ use actix_web::body::BoxBody;
 use actix_web::error::JsonPayloadError;
 use serde::Serialize;
 use thiserror::Error;
+use utoipa::ToSchema;
 use crate::domain::models::order::{DeleteOrderError, FindOrderError, UpdateOrderError};
 use crate::domain::ports::payment_service::PaymentServiceError;
 
@@ -20,8 +21,10 @@ pub struct ApiErrorData {
     message: String,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, ToSchema)]
 pub struct ApiResponseBody<T> {
+    /// HTTP Statuscode of the response
+    #[schema(example = 200)]
     status_code: u16,
     data: T,
 }
@@ -39,7 +42,7 @@ impl<T: Serialize> Responder for ApiResponseBody<T> {
     type Body = BoxBody;
 
     fn respond_to(self, _req: &HttpRequest) -> HttpResponse {
-        match serde_json::to_string(&self) {
+        match serde_json::to_string(&self.data) {
             Ok(body) => HttpResponse::build(actix_web::http::StatusCode::from_u16(self.status_code).unwrap_or(actix_web::http::StatusCode::INTERNAL_SERVER_ERROR))
                 .content_type("application/json")
                 .body(body),

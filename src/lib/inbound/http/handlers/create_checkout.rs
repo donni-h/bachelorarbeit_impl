@@ -4,6 +4,7 @@ use actix_web::http::StatusCode;
 use actix_web::web::Json;
 use serde::Deserialize;
 use thiserror::Error;
+use utoipa::ToSchema;
 use uuid::Uuid;
 use crate::domain::models::order::{CreateOrderError, CreateOrderRequest};
 use crate::domain::models::order_details::UserName;
@@ -14,24 +15,24 @@ use crate::inbound::http::AppState;
 use crate::inbound::http::extractors::auth::KeycloakToken;
 use crate::inbound::http::handlers::{ApiError, ApiResponseBody};
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct CreateOrderHttpRequestBody {
-    items: Vec<CheckoutItem>,
+    items: Vec<CreateOrderItemHttpRequestBody>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct CheckoutItem {
+pub struct CreateOrderItemHttpRequestBody {
     name: String,
     item_price: f64,
     plant_id: Uuid,
 }
 
-impl TryFrom<CheckoutItem> for CreateOrderItemRequest {
+impl TryFrom<CreateOrderItemHttpRequestBody> for CreateOrderItemRequest {
     type Error = PriceError;
 
-    fn try_from(item: CheckoutItem) -> Result<Self, Self::Error> {
+    fn try_from(item: CreateOrderItemHttpRequestBody) -> Result<Self, Self::Error> {
         let price = Price::new(item.item_price)?;
         let product_name = ProductName::new(&item.name);
 
@@ -83,12 +84,19 @@ impl CreateOrderHttpRequestBody {
         Ok(CreateOrderRequest::new(username, items))
     }
 }
-
+#[utoipa::path(
+  post,
+  path="/api/payment/create-checkout-session",
+  request_body=CreateOrderHttpRequestBody,
+  responses(
+    (status = 201, description = "Successfully created session", body = String)
+  )
+)]
 pub async fn create_checkout<OS: OrderService, PS: PaymentService>(
     state: web::Data<AppState<OS, PS>>,
     body: Json<CreateOrderHttpRequestBody>,
     token: KeycloakToken,
-) -> Result<impl Responder, ApiError> {
+) -> Result<ApiResponseBody<String>, ApiError> {
     println!("{body:#?}");
     let domain_req = body.into_inner().try_into_domain(&token)?;
 

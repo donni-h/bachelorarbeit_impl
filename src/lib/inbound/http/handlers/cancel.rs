@@ -2,6 +2,7 @@ use actix_web::http::StatusCode;
 use actix_web::Responder;
 use actix_web::web::{Data, Query};
 use serde::Deserialize;
+use utoipa::IntoParams;
 use crate::domain::models::order_details::SessionId;
 use crate::domain::ports::order_service::OrderService;
 use crate::domain::ports::payment_service::PaymentService;
@@ -9,7 +10,7 @@ use crate::inbound::http::AppState;
 use crate::inbound::http::extractors::auth::KeycloakToken;
 use crate::inbound::http::handlers::{ApiError, ApiResponseBody};
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, IntoParams)]
 pub struct CancelHttpRequestQuery{
     session_id: String,
 }
@@ -20,6 +21,16 @@ impl CancelHttpRequestQuery {
     }
 }
 
+#[utoipa::path(
+  get,
+  path="/api/payment/cancel",
+  params(
+    CancelHttpRequestQuery,
+  ),
+  responses(
+    (status = 200, description = "ID of canceled order", body = Uuid)
+  )
+)]
 pub async fn cancel<OS: OrderService, PS: PaymentService>(
     auth: KeycloakToken,
     state: Data<AppState<OS, PS>>,

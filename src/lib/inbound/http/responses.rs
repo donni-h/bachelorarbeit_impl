@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::Serialize;
+use utoipa::ToSchema;
 use uuid::Uuid;
 use crate::domain::models::order::Order;
 use crate::domain::models::order_details::OrderDetails;
@@ -19,10 +20,10 @@ pub struct ErrorResponseData {
 }
 
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, ToSchema)]
 pub struct OrderResponseData {
     id: Uuid,
-    items: Vec<CheckoutItemResponse>,
+    items: Vec<OrderItemResponse>,
     #[serde(alias = "metadata")]
     details: CheckoutDetailsResponse
 }
@@ -33,7 +34,7 @@ impl From<&Order> for OrderResponseData {
         let items = order
             .items()
             .iter()
-            .map(CheckoutItemResponse::from)
+            .map(OrderItemResponse::from)
             .collect();
         let details = CheckoutDetailsResponse::from(order.details());
 
@@ -43,15 +44,15 @@ impl From<&Order> for OrderResponseData {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
-pub struct CheckoutItemResponse {
+pub struct OrderItemResponse {
     name: String,
     item_price: i64,
     plant_id: Uuid,
 }
 
-impl From<&OrderItem> for CheckoutItemResponse {
+impl From<&OrderItem> for OrderItemResponse {
     fn from(item: &OrderItem) -> Self {
         Self {
             name: item.product_name().to_string(),
@@ -61,7 +62,7 @@ impl From<&OrderItem> for CheckoutItemResponse {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct CheckoutDetailsResponse {
     username: String,
