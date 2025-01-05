@@ -7,6 +7,7 @@ use uuid::Uuid;
 use crate::domain::ports::order_service::OrderService;
 use crate::domain::ports::payment_service::PaymentService;
 use crate::inbound::http::AppState;
+use crate::inbound::http::extractors::auth::KeycloakToken;
 use crate::inbound::http::handlers::{ApiError, ApiResponseBody};
 use crate::inbound::http::responses::OrderResponseData;
 
@@ -34,7 +35,8 @@ impl GetByIdHttpRequestQuery {
 )]
 pub async fn get_order_by_id<OS: OrderService, PS: PaymentService>(
     state: Data<AppState<OS, PS>>,
-    query: Query<GetByIdHttpRequestQuery>
+    query: Query<GetByIdHttpRequestQuery>,
+    _: KeycloakToken,
 ) -> Result<impl Responder, ApiError> { 
     let domain_req = query.into_inner().into_domain();
     

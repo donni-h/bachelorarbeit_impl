@@ -11,29 +11,52 @@ use std::sync::Arc;
 #[tokio::main]
 async fn main() {
     dotenv().ok();
-    let keycloak_url = "http://localhost:3000/auth/realms/shop";
-    let keycloak_issuer = "http://localhost:3000/auth/realms/shop";
-
-    let keys = fetch_jwk_set(keycloak_url)
+    let keycloak_url = std::env::var("KEYCLOAK_URL")
+        .expect("KEYCLOAK_URL not set");
+    let keycloak_issuer = std::env::var("KEYCLOAK_ISSUER")
+        .expect("KEYCLOAK_ISSUER not set");
+    let keys = fetch_jwk_set(&keycloak_url)
         .await
         .expect("Failed to fetch JWK Set");
+    let secret_key = std::env::var("STRIPE_SK")
+        .expect("missing stripe secret key");
+    let postgres_url = std::env::var("DATABASE_URL")
+        .expect("missing DATABASE_URL");
+    let domain =  std::env::var("STRIPE_REDIRECT_URL")
+        .expect("missing STRIPE_REDIRECT_URL not set");
 
+    let payment_service = Arc::new(
+        StripeService::new(secret_key.clone(),
+                           domain.to_string(),
+        )
+    );
+    let postgres = Postgres::new(&postgres_url)
+        .await
+        .unwrap();
+    let rabbit_mq = RabbitMQ::new(
+        "127.0.0.1",
+        5672,
+        "Checkout_ToBasket",
+        "BasketExchange",
+    )
+        .await;
+    let order_service = DefaultOrderService::new(
+        postgres,
+        rabbit_mq,
+        payment_service.clone(),
+    );
+    let config = HttpServerConfig { port: "8080" };
     let mut validator = Validation::new(Algorithm::RS256);
     validator.set_issuer(&[keycloak_issuer]);
     validator.set_audience(&["account"]);
 
-    let secret_key = std::env::var("STRIPE_SK").expect("missing stripe secret key");
-    let postgres_url = std::env::var("DATABASE_URL").expect("missing DATABASE_URL");
-    let domain = "http://127.0.0.1:8080";
-    let payment_service = Arc::new(StripeService::new(secret_key.clone(), domain.to_string()));
-    let postgres = Postgres::new(&postgres_url).await.unwrap();
-    let rabbit_mq = RabbitMQ::new("127.0.0.1", 5672, "Checkout_ToBasket", "BasketExchange").await;
-
-    let order_service = DefaultOrderService::new(postgres, rabbit_mq, payment_service.clone());
-
-    let config = HttpServerConfig { port: "8080" };
-
-    HttpServer::new(order_service, payment_service, keys, validator, &config)
+    HttpServer::new(
+        order_service,
+        payment_service,
+        keys,
+        validator,
+        &config,
+    )
         .await
         .expect("server crashed");
 }

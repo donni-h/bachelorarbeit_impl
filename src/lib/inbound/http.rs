@@ -22,8 +22,10 @@ use crate::inbound::http::handlers::create_checkout::__path_create_checkout;
 use crate::inbound::http::handlers::cancel::__path_cancel;
 use crate::inbound::http::handlers::delete_all_orders::__path_delete_all_orders;
 use crate::inbound::http::handlers::delete_by_id::__path_delete_order_by_id;
+use crate::inbound::http::handlers::get_all_orders_for_user::get_all_orders_for_user;
 use crate::inbound::http::handlers::get_by_id::__path_get_order_by_id;
 use crate::inbound::http::handlers::success::__path_success;
+use crate::inbound::http::handlers::get_all_orders_for_user::__path_get_all_orders_for_user;
 use crate::inbound::http::responses::OrderResponseData;
 mod handlers;
 mod responses;
@@ -97,6 +99,7 @@ fn api_routes(cfg: &mut ServiceConfig) {
             .route("/success", web::get().to(success::<OrderService, PaymentService>))
             .route("/cancel", web::get().to(cancel::<OrderService, PaymentService>))
             .route("/orderbyid", web::get().to(get_order_by_id::<OrderService, PaymentService>))
+            .route("/allordersforuser", web::get().to(get_all_orders_for_user::<OrderService, PaymentService>))
             .route("/order", web::delete().to(delete_order_by_id::<OrderService, PaymentService>))
             .route("/orders", web::delete().to(delete_all_orders::<OrderService, PaymentService>))
     );
@@ -109,6 +112,7 @@ fn api_routes(cfg: &mut ServiceConfig) {
         cancel,
         delete_all_orders,
         delete_order_by_id,
+        get_all_orders_for_user,
         get_order_by_id,
         success,
     ),
