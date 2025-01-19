@@ -24,6 +24,8 @@ async fn main() {
         .expect("missing DATABASE_URL");
     let domain =  std::env::var("STRIPE_REDIRECT_URL")
         .expect("missing STRIPE_REDIRECT_URL not set");
+    let rabbit_host = std::env::var("RABBIT_HOST").expect("missing RABBIT_HOST");
+
 
     let payment_service = Arc::new(
         StripeService::new(secret_key.clone(),
@@ -34,7 +36,7 @@ async fn main() {
         .await
         .unwrap();
     let rabbit_mq = RabbitMQ::new(
-        "127.0.0.1",
+        &rabbit_host,
         5672,
         "Checkout_ToBasket",
         "BasketExchange",
